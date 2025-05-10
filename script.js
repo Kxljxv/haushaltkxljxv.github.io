@@ -171,13 +171,6 @@ async function renderTreemap(path = "") {
     });
 
     // Custom tooltip html on hover
-    rectangleTemplate.adapters.add("tooltipHTML", function(html, target) {
-      const data = target.dataItem && target.dataItem.dataContext;
-      if (data && data.yaml) {
-        return `<b>${data.name}</b><br/>${formatYamlTooltip(data.yaml)}`;
-      }
-      return html;
-    });
 
     // Click to drilldown
     rectangleTemplate.events.on("click", function(ev) {
