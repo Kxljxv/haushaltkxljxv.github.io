@@ -38,7 +38,7 @@ async function fetchYAML(path) {
 }
 
 const navStack = [];
-let root, series;
+let root;
 
 async function prepareTreeData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
@@ -56,7 +56,7 @@ async function prepareTreeData(path) {
           value: betrag,
           yaml: yaml,
           folderName: folderName,
-          hasFolder: dirData.subdirectories.includes(folderName),
+          hasFolder: dirData.subdirectories.includes(folderName)
         };
         children.push(node);
       }
@@ -98,7 +98,7 @@ async function renderTreemap(path = "") {
   ]);
 
   // Create series
-  series = root.container.children.push(
+  let series = root.container.children.push(
     am5hierarchy.Treemap.new(root, {
       singleBranchOnly: false,
       downDepth: 1,
