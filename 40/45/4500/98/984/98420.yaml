@@ -1,0 +1,16 @@
+ID: null
+Bereich: '40'
+Bereichsbezeichnung: Marzahn-Hellersdorf
+Einzelplan: '45'
+Einzelplanbezeichnung: Allgemeine Finanzangelegenheiten
+Kapitel: '4500'
+Kapitelbezeichnung: Allgemeine Finanzangelegenheiten
+Obergruppe: '98'
+Obergruppenbezeichnung: Haushaltstechnische Verrechnungen
+Gruppe: '984'
+Gruppenbezeichnung: Interne Zahlungsströme (nur Berlin und Bremen)
+Titel: '98420'
+Titelbezeichnung: Verrechnungen für kalkulatorische Zinsen Mobilien
+Betrag: '248000'
+FID: 40/45/4500/98/984/98420
+path: ./40/45/4500/98/984/98420.yaml

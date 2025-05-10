@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '12'
+Einzelplanbezeichnung: Stadtentwicklung, Bauen und Wohnen
+Kapitel: '1230'
+Kapitelbezeichnung: Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen - Geoinformation
+  -
+Obergruppe: '81'
+Obergruppenbezeichnung: Erwerb von beweglichen Sachen
+Gruppe: '812'
+Gruppenbezeichnung: Erwerb von Geräten und sonstigen beweglichen Sachen
+Titel: '81215'
+Titelbezeichnung: Beschaffungen für den Betrieb und die Weiterentwicklung des Referenzsystems
+  SAPOS (Satellitenpositionierungsdienst der deutschen Landesvermessung)
+Betrag: '145000'
+FID: 30/12/1230/81/812/81215
+path: ./30/12/1230/81/812/81215.yaml

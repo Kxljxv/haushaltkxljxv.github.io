@@ -1,0 +1,17 @@
+ID: null
+Bereich: '32'
+Bereichsbezeichnung: Friedrichshain-Kreuzberg
+Einzelplan: '45'
+Einzelplanbezeichnung: Allgemeine Finanzangelegenheiten
+Kapitel: '4510'
+Kapitelbezeichnung: Verwaltung von Finanzvermögen
+Obergruppe: '82'
+Obergruppenbezeichnung: Erwerb von unbeweglichen Sachen
+Gruppe: '821'
+Gruppenbezeichnung: Erwerb von unbeweglichen Sachen, soweit nicht Gruppen 822 oder
+  823
+Titel: '82160'
+Titelbezeichnung: Kauf von bebauten Grundstücken für das Finanzvermögen
+Betrag: '1000'
+FID: 32/45/4510/82/821/82160
+path: ./32/45/4510/82/821/82160.yaml

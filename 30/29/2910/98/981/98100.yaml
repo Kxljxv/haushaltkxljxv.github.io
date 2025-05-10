@@ -1,0 +1,16 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '29'
+Einzelplanbezeichnung: Allgemeine Finanz- und Personalangelegenheiten
+Kapitel: '2910'
+Kapitelbezeichnung: Übrige allgemeine Finanzangelegenheiten
+Obergruppe: '98'
+Obergruppenbezeichnung: Haushaltstechnische Verrechnungen
+Gruppe: '981'
+Gruppenbezeichnung: Verrechnungen zwischen Kapiteln
+Titel: '98100'
+Titelbezeichnung: Saldoausgleich für interne Verrechnungen
+Betrag: '9699000'
+FID: 30/29/2910/98/981/98100
+path: ./30/29/2910/98/981/98100.yaml

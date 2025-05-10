@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1502'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Zentrale Datenstelle der Landesfinanzminister
+  und sonstige Angelegenheiten der Finanzministerkonferenz -
+Obergruppe: '98'
+Obergruppenbezeichnung: Haushaltstechnische Verrechnungen
+Gruppe: '981'
+Gruppenbezeichnung: Verrechnungen zwischen Kapiteln
+Titel: '98101'
+Titelbezeichnung: Allgemeine interne Verrechnungen
+Betrag: '1000'
+FID: 30/15/1502/98/981/98101
+path: ./30/15/1502/98/981/98101.json

@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '20'
+Einzelplanbezeichnung: Rechnungshof
+Kapitel: '2000'
+Kapitelbezeichnung: Rechnungshof
+Obergruppe: '81'
+Obergruppenbezeichnung: Erwerb von beweglichen Sachen
+Gruppe: '812'
+Gruppenbezeichnung: Erwerb von Geräten und sonstigen beweglichen Sachen
+Titel: '81289'
+Titelbezeichnung: Geräte, technische Einrichtungen, Ausstattungen für die verfahrensunabhängige
+  IKT
+Betrag: '57000'
+FID: 30/20/2000/81/812/81289
+path: ./30/20/2000/81/812/81289.yaml

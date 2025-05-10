@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '428'
+Gruppenbezeichnung: Entgelte der Arbeitnehmerinnen und Arbeitnehmer
+Titel: '42801'
+Titelbezeichnung: Entgelte der planmäßigen Tarifbeschäftigten
+Betrag: '4013000'
+FID: 30/15/1500/42/428/42801
+path: ./30/15/1500/42/428/42801.yaml

@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '20'
+Einzelplanbezeichnung: Rechnungshof
+Kapitel: '2000'
+Kapitelbezeichnung: Rechnungshof
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '518'
+Gruppenbezeichnung: Mieten und Pachten
+Titel: '51820'
+Titelbezeichnung: Mietausgaben für die Nettokaltmiete aufgrund vertraglicher Verpflichtungen
+  aus dem Facility Management
+Betrag: '1835000'
+FID: 30/20/2000/51/518/51820
+path: ./30/20/2000/51/518/51820.yaml

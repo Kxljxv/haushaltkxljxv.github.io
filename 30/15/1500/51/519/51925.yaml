@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '519'
+Gruppenbezeichnung: Unterhaltung der Grundstücke und baulichen Anlagen
+Titel: '51925'
+Titelbezeichnung: Nutzerspezifische Nebenkosten im Rahmen des Facility Managements
+Betrag: '1100000'
+FID: 30/15/1500/51/519/51925
+path: ./30/15/1500/51/519/51925.yaml

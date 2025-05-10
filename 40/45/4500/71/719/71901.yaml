@@ -1,0 +1,16 @@
+ID: null
+Bereich: '40'
+Bereichsbezeichnung: Marzahn-Hellersdorf
+Einzelplan: '45'
+Einzelplanbezeichnung: Allgemeine Finanzangelegenheiten
+Kapitel: '4500'
+Kapitelbezeichnung: Allgemeine Finanzangelegenheiten
+Obergruppe: '71'
+Obergruppenbezeichnung: Baumaßnahmen des Hochbaus, Architektenhonorare
+Gruppe: '719'
+Gruppenbezeichnung: Pauschale Ausgaben für Bauinvestitionen
+Titel: '71901'
+Titelbezeichnung: Pauschale Zuweisungen für Investitionen
+Betrag: '105000'
+FID: 40/45/4500/71/719/71901
+path: ./40/45/4500/71/719/71901.yaml

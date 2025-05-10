@@ -1,0 +1,11 @@
+{
+    "files": [
+        "532.yaml",
+        "534.yaml",
+        "directory.json"
+    ],
+    "subdirectories": [
+        "532",
+        "534"
+    ]
+}

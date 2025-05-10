@@ -1,0 +1,17 @@
+ID: null
+Bereich: '35'
+Bereichsbezeichnung: Spandau
+Einzelplan: '40'
+Einzelplanbezeichnung: Jugendamt
+Kapitel: '4021'
+Kapitelbezeichnung: Kindertagesbetreuung
+Obergruppe: '68'
+Obergruppenbezeichnung: Sonstige Zuschüsse für laufende Zwecke an sonstige Bereiche
+Gruppe: '681'
+Gruppenbezeichnung: Renten, Unterstützungen und sonstige Geldleistungen an natürliche
+  Personen
+Titel: '68111'
+Titelbezeichnung: Arbeitsbelohnungen, Taschengelder, Festtagsgaben
+Betrag: '1000'
+FID: 35/40/4021/68/681/68111
+path: ./35/40/4021/68/681/68111.yaml

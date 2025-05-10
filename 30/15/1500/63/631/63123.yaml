@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '63'
+Obergruppenbezeichnung: Sonstige (zweckgebundene) Zuweisungen an öffentlichen Bereich
+Gruppe: '631'
+Gruppenbezeichnung: Sonstige Zuweisungen an Bund
+Titel: '63123'
+Titelbezeichnung: Zuschuss an den Bund nach dem Lastenausgleichsgesetz
+Betrag: '150000'
+FID: 30/15/1500/63/631/63123
+path: ./30/15/1500/63/631/63123.yaml

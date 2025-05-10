@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '3'
+Einzelplanbezeichnung: Regierende Bürgermeisterin/ Regierender Bürgermeister
+Kapitel: '300'
+Kapitelbezeichnung: Senatskanzlei
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '421'
+Gruppenbezeichnung: Bezüge des Bundespräsidenten, des Bundeskanzlers, des Ministerpräsidenten,
+  der Bürgermeister, der Minister, der Senatoren, der Parlamentarischen Staatssekretäre
+  und sonstiger Amtsträgerinnen und Amtsträger
+Titel: '42100'
+Titelbezeichnung: Amtsbezüge
+Betrag: '251000'
+FID: 30/03/0300/42/421/42100
+path: ./30/03/0300/42/421/42100.json

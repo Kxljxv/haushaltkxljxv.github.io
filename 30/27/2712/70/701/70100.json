@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '27'
+Einzelplanbezeichnung: Zuweisungen an und Programme für die Bezirke
+Kapitel: '2712'
+Kapitelbezeichnung: Aufwendungen der Bezirke - Stadtentwicklung, Bauen und Wohnen
+  -
+Obergruppe: '70'
+Obergruppenbezeichnung: Baumaßnahmen des Hochbaus, Architektenhonorare
+Gruppe: '701'
+Gruppenbezeichnung: Neu-, Um- und Erweiterungsbauten des Hochbaus einschließlich Garten-
+  und Landschaftsbau sowie Ersatzbauten
+Titel: '70100'
+Titelbezeichnung: Neue Schulen Programm
+Betrag: '235000000'
+FID: 30/27/2712/70/701/70100
+path: ./30/27/2712/70/701/70100.json

@@ -1,0 +1,17 @@
+ID: null
+Bereich: '42'
+Bereichsbezeichnung: Reinickendorf
+Einzelplan: '41'
+Einzelplanbezeichnung: Gesundheitsamt
+Kapitel: '4100'
+Kapitelbezeichnung: Gesundheit und Jugendgesundheitsdienst
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '511'
+Gruppenbezeichnung: Geschäftsbedarf und Kommunikation sowie Geräte, Ausstattungs-
+  und Ausrüstungsgegenstände, sonstige Gebrauchsgegenstände
+Titel: '51101'
+Titelbezeichnung: Geschäftsbedarf
+Betrag: '29000'
+FID: 42/41/4100/51/511/51101
+path: ./42/41/4100/51/511/51101.json

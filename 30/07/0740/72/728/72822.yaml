@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '7'
+Einzelplanbezeichnung: Mobilität, Verkehr, Klimaschutz und Umwelt
+Kapitel: '740'
+Kapitelbezeichnung: Senatsverwaltung für Mobilität, Verkehr, Klimaschutz und Umwelt
+  - Tiefbau -
+Obergruppe: '72'
+Obergruppenbezeichnung: Baumaßnahmen des Tiefbaus
+Gruppe: '728'
+Gruppenbezeichnung: Wasserbau (Ersatzbau)
+Titel: '72822'
+Titelbezeichnung: Neubau der Pumpstation Dianasee in Charlottenburg-Wilmersdorf
+Betrag: '10000'
+FID: 30/07/0740/72/728/72822
+path: ./30/07/0740/72/728/72822.yaml

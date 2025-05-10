@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '44'
+Obergruppenbezeichnung: Beihilfen, Unterstützungen, Fürsorgeleistungen und dgl.
+Gruppe: '443'
+Gruppenbezeichnung: Fürsorgeleistungen und Unterstützungen
+Titel: '44304'
+Titelbezeichnung: Beiträge an die Unfallkasse für Arbeitnehmerinnen und Arbeitnehmer
+Betrag: '350000'
+FID: 30/15/1500/44/443/44304
+path: ./30/15/1500/44/443/44304.yaml

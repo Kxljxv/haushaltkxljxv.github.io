@@ -1,0 +1,17 @@
+ID: null
+Bereich: '35'
+Bereichsbezeichnung: Spandau
+Einzelplan: '41'
+Einzelplanbezeichnung: Gesundheitsamt
+Kapitel: '4100'
+Kapitelbezeichnung: Gesundheit und Jugendgesundheitsdienst
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '422'
+Gruppenbezeichnung: Bezüge und Nebenleistungen der Beamtinnen, Beamten, Richterinnen
+  und Richter
+Titel: '42231'
+Titelbezeichnung: Bezüge der Beamtinnen und Beamten (Fremdfinanzierung)
+Betrag: '10000'
+FID: 35/41/4100/42/422/42231
+path: ./35/41/4100/42/422/42231.yaml

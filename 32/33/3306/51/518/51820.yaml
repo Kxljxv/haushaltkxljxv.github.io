@@ -1,0 +1,17 @@
+ID: null
+Bereich: '32'
+Bereichsbezeichnung: Friedrichshain-Kreuzberg
+Einzelplan: '33'
+Einzelplanbezeichnung: Bezirksamt - Politisch- Administrativer Bereich -
+Kapitel: '3306'
+Kapitelbezeichnung: Serviceeinheit Facility Management
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '518'
+Gruppenbezeichnung: Mieten und Pachten
+Titel: '51820'
+Titelbezeichnung: Mietausgaben für die Nettokaltmiete aufgrund vertraglicher Verpflichtungen
+  aus dem Facility Management
+Betrag: '122000'
+FID: 32/33/3306/51/518/51820
+path: ./32/33/3306/51/518/51820.yaml

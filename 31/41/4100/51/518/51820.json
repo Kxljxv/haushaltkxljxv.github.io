@@ -1,0 +1,17 @@
+ID: null
+Bereich: '31'
+Bereichsbezeichnung: Mitte
+Einzelplan: '41'
+Einzelplanbezeichnung: Gesundheitsamt
+Kapitel: '4100'
+Kapitelbezeichnung: Gesundheit und Jugendgesundheitsdienst
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '518'
+Gruppenbezeichnung: Mieten und Pachten
+Titel: '51820'
+Titelbezeichnung: Mietausgaben für die Nettokaltmiete aufgrund vertraglicher Verpflichtungen
+  aus dem Facility Management
+Betrag: '171000'
+FID: 31/41/4100/51/518/51820
+path: ./31/41/4100/51/518/51820.json

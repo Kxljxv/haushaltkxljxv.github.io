@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '518'
+Gruppenbezeichnung: Mieten und Pachten
+Titel: '51820'
+Titelbezeichnung: Mietausgaben für die Nettokaltmiete aufgrund vertraglicher Verpflichtungen
+  aus dem Facility Management
+Betrag: '3567000'
+FID: 30/15/1500/51/518/51820
+path: ./30/15/1500/51/518/51820.yaml

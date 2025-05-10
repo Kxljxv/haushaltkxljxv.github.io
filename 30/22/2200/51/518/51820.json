@@ -1,0 +1,19 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '22'
+Einzelplanbezeichnung: Bürger- und Polizeibeauftragte/Bürger- und Polizeibeauftragter
+  des Landes Berlin
+Kapitel: '2200'
+Kapitelbezeichnung: Bürger- und Polizeibeauftragte/Bürger- und Polizeibeauftragter
+  des Landes Berlin
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '518'
+Gruppenbezeichnung: Mieten und Pachten
+Titel: '51820'
+Titelbezeichnung: Mietausgaben für die Nettokaltmiete aufgrund vertraglicher Verpflichtungen
+  aus dem Facility Management
+Betrag: '68000'
+FID: 30/22/2200/51/518/51820
+path: ./30/22/2200/51/518/51820.json

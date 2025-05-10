@@ -1,0 +1,15 @@
+Bereich: null
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '421'
+Gruppenbezeichnung: Bezüge des Bundespräsidenten, des Bundeskanzlers, des Ministerpräsidenten,
+  der Bürgermeister, der Minister, der Senatoren, der Parlamentarischen Staatssekretäre
+  und sonstiger Amtsträgerinnen und Amtsträger
+Betrag: '228000'
+path: ./30/15/1500/42/421.yaml

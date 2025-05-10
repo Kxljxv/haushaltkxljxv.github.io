@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '7'
+Einzelplanbezeichnung: Mobilität, Verkehr, Klimaschutz und Umwelt
+Kapitel: '740'
+Kapitelbezeichnung: Senatsverwaltung für Mobilität, Verkehr, Klimaschutz und Umwelt
+  - Tiefbau -
+Obergruppe: '72'
+Obergruppenbezeichnung: Baumaßnahmen des Tiefbaus
+Gruppe: '720'
+Gruppenbezeichnung: Allgemeiner Straßenbau
+Titel: '72003'
+Titelbezeichnung: Neubau einer Straßenverbindung An der Wuhlheide bis Märkische Allee
+  (Weiterbau der TVO - Tangentialverbindung Ost)
+Betrag: '3500000'
+FID: 30/07/0740/72/720/72003
+path: ./30/07/0740/72/720/72003.yaml

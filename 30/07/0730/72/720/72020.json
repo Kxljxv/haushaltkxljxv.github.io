@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '7'
+Einzelplanbezeichnung: Mobilität, Verkehr, Klimaschutz und Umwelt
+Kapitel: '730'
+Kapitelbezeichnung: Senatsverwaltung für Mobilität, Verkehr, Klimaschutz und Umwelt
+  - Verkehr -
+Obergruppe: '72'
+Obergruppenbezeichnung: Baumaßnahmen des Tiefbaus
+Gruppe: '720'
+Gruppenbezeichnung: Allgemeiner Straßenbau
+Titel: '72020'
+Titelbezeichnung: Verbesserung der Infrastruktur für den Fußverkehr
+Betrag: '3000000'
+FID: 30/07/0730/72/720/72020
+path: ./30/07/0730/72/720/72020.json

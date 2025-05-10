@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '7'
+Einzelplanbezeichnung: Mobilität, Verkehr, Klimaschutz und Umwelt
+Kapitel: '740'
+Kapitelbezeichnung: Senatsverwaltung für Mobilität, Verkehr, Klimaschutz und Umwelt
+  - Tiefbau -
+Obergruppe: '72'
+Obergruppenbezeichnung: Baumaßnahmen des Tiefbaus
+Gruppe: '727'
+Gruppenbezeichnung: Brücken- und Tunnelbau (Ersatzbau)
+Titel: '72710'
+Titelbezeichnung: Neubau der Moltkebrücke im Zuge der Enzianstraße über Bahnanlagen
+  in Steglitz-Zehlendorf
+Betrag: '1850000'
+FID: 30/07/0740/72/727/72710
+path: ./30/07/0740/72/727/72710.yaml

@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1531'
+Kapitelbezeichnung: Finanzämter
+Obergruppe: '45'
+Obergruppenbezeichnung: Sonstige personalbezogene Ausgaben
+Gruppe: '452'
+Gruppenbezeichnung: Personalbezogene Zahlungen an die Sozialversicherungsträger, soweit
+  nicht unter Obergruppen 41 bis 44 erfasst
+Titel: '45201'
+Titelbezeichnung: Nachversicherungen
+Betrag: '1663000'
+FID: 30/15/1531/45/452/45201
+path: ./30/15/1531/45/452/45201.json

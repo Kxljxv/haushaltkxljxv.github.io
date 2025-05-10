@@ -1,0 +1,16 @@
+ID: null
+Bereich: '42'
+Bereichsbezeichnung: Reinickendorf
+Einzelplan: '45'
+Einzelplanbezeichnung: Allgemeine Finanzangelegenheiten
+Kapitel: '4500'
+Kapitelbezeichnung: Allgemeine Finanzangelegenheiten
+Obergruppe: '97'
+Obergruppenbezeichnung: Globale Mehr- und Minderausgaben
+Gruppe: '971'
+Gruppenbezeichnung: Globale Mehrausgaben
+Titel: '97101'
+Titelbezeichnung: Pauschale Mehrausgaben
+Betrag: '2205000'
+FID: 42/45/4500/97/971/97101
+path: ./42/45/4500/97/971/97101.yaml

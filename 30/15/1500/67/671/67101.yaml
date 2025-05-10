@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1500'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Politisch-Administrativer Bereich
+  und Service -
+Obergruppe: '67'
+Obergruppenbezeichnung: Erstattungen an sonstige Bereiche
+Gruppe: '671'
+Gruppenbezeichnung: Erstattungen an Inland
+Titel: '67101'
+Titelbezeichnung: Ersatz von Ausgaben
+Betrag: '1000'
+FID: 30/15/1500/67/671/67101
+path: ./30/15/1500/67/671/67101.yaml

@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1545'
+Kapitelbezeichnung: Landesverwaltungsamt - IT-Service und Integrierte Personalverwaltung
+  -
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '428'
+Gruppenbezeichnung: Entgelte der Arbeitnehmerinnen und Arbeitnehmer
+Titel: '42801'
+Titelbezeichnung: Entgelte der planmäßigen Tarifbeschäftigten
+Betrag: '1346000'
+FID: 30/15/1545/42/428/42801
+path: ./30/15/1545/42/428/42801.json

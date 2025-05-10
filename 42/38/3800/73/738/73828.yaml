@@ -1,0 +1,17 @@
+ID: null
+Bereich: '42'
+Bereichsbezeichnung: Reinickendorf
+Einzelplan: '38'
+Einzelplanbezeichnung: Straßen- und Grünflächenamt
+Kapitel: '3800'
+Kapitelbezeichnung: Tiefbau und Straßenverwaltung
+Obergruppe: '73'
+Obergruppenbezeichnung: Baumaßnahmen des Tiefbaus
+Gruppe: '738'
+Gruppenbezeichnung: Bezirkliche Tiefbaumaßnahmen der pauschalen Zuweisung
+Titel: '73828'
+Titelbezeichnung: Neubau Straße Alt Lübars von Zabel-Krüger-Damm bis Blankenfelder
+  Chaussee
+Betrag: '50000'
+FID: 42/38/3800/73/738/73828
+path: ./42/38/3800/73/738/73828.yaml

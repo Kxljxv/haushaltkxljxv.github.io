@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '10'
+Einzelplanbezeichnung: Bildung, Jugend und Familie
+Kapitel: '1016'
+Kapitelbezeichnung: Senatsverwaltung für Bildung, Jugend und Familie - Gemeinschaftsschulen
+  -
+Obergruppe: '98'
+Obergruppenbezeichnung: Haushaltstechnische Verrechnungen
+Gruppe: '981'
+Gruppenbezeichnung: Verrechnungen zwischen Kapiteln
+Titel: '98101'
+Titelbezeichnung: Allgemeine interne Verrechnungen
+Betrag: '1000'
+FID: 30/10/1016/98/981/98101
+path: ./30/10/1016/98/981/98101.yaml

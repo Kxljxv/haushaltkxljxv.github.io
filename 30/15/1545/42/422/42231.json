@@ -1,0 +1,18 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1545'
+Kapitelbezeichnung: Landesverwaltungsamt - IT-Service und Integrierte Personalverwaltung
+  -
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '422'
+Gruppenbezeichnung: Bezüge und Nebenleistungen der Beamtinnen, Beamten, Richterinnen
+  und Richter
+Titel: '42231'
+Titelbezeichnung: Bezüge der Beamtinnen und Beamten (Fremdfinanzierung)
+Betrag: '125000'
+FID: 30/15/1545/42/422/42231
+path: ./30/15/1545/42/422/42231.json

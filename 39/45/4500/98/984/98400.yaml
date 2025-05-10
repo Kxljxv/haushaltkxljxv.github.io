@@ -1,0 +1,16 @@
+ID: null
+Bereich: '39'
+Bereichsbezeichnung: Treptow-Köpenick
+Einzelplan: '45'
+Einzelplanbezeichnung: Allgemeine Finanzangelegenheiten
+Kapitel: '4500'
+Kapitelbezeichnung: Allgemeine Finanzangelegenheiten
+Obergruppe: '98'
+Obergruppenbezeichnung: Haushaltstechnische Verrechnungen
+Gruppe: '984'
+Gruppenbezeichnung: Interne Zahlungsströme (nur Berlin und Bremen)
+Titel: '98400'
+Titelbezeichnung: Verrechnungen für kalkulatorische Gebäudekosten
+Betrag: '23227000'
+FID: 39/45/4500/98/984/98400
+path: ./39/45/4500/98/984/98400.yaml

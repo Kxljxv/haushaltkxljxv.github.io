@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '20'
+Einzelplanbezeichnung: Rechnungshof
+Kapitel: '2000'
+Kapitelbezeichnung: Rechnungshof
+Obergruppe: '42'
+Obergruppenbezeichnung: Bezüge, Entgelte und Nebenleistungen
+Gruppe: '422'
+Gruppenbezeichnung: Bezüge und Nebenleistungen der Beamtinnen, Beamten, Richterinnen
+  und Richter
+Titel: '42260'
+Titelbezeichnung: Bezüge der Beamtinnen/Beamten für Maßnahmen im Rahmen des Wissenstransfers
+Betrag: '18000'
+FID: 30/20/2000/42/422/42260
+path: ./30/20/2000/42/422/42260.yaml

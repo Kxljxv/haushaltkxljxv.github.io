@@ -1,0 +1,17 @@
+ID: null
+Bereich: '30'
+Bereichsbezeichnung: Hauptverwaltung
+Einzelplan: '15'
+Einzelplanbezeichnung: Finanzen
+Kapitel: '1510'
+Kapitelbezeichnung: Senatsverwaltung für Finanzen - Vermögen -
+Obergruppe: '87'
+Obergruppenbezeichnung: Inanspruchnahme aus Gewährleistungen
+Gruppe: '871'
+Gruppenbezeichnung: Ausgaben für die Inanspruchnahme aus Gewährleistungen an das Inland
+Titel: '87103'
+Titelbezeichnung: Inanspruchnahme aus Bürgschaften im Zusammenhang mit dem Erwerb
+  selbstgenutzten Arbeitsraums
+Betrag: '500000'
+FID: 30/15/1510/87/871/87103
+path: ./30/15/1510/87/871/87103.yaml

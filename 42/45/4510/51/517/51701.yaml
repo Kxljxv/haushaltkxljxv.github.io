@@ -1,0 +1,16 @@
+ID: null
+Bereich: '42'
+Bereichsbezeichnung: Reinickendorf
+Einzelplan: '45'
+Einzelplanbezeichnung: Allgemeine Finanzangelegenheiten
+Kapitel: '4510'
+Kapitelbezeichnung: Verwaltung von Finanzvermögen
+Obergruppe: '51'
+Obergruppenbezeichnung: Sächliche Verwaltungsausgaben
+Gruppe: '517'
+Gruppenbezeichnung: Bewirtschaftung der Grundstücke, Gebäude und Räume
+Titel: '51701'
+Titelbezeichnung: Bewirtschaftungsausgaben
+Betrag: '3500'
+FID: 42/45/4510/51/517/51701
+path: ./42/45/4510/51/517/51701.yaml

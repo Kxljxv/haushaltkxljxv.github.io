@@ -1,0 +1,16 @@
+ID: null
+Bereich: '35'
+Bereichsbezeichnung: Spandau
+Einzelplan: '41'
+Einzelplanbezeichnung: Gesundheitsamt
+Kapitel: '4100'
+Kapitelbezeichnung: Gesundheit und Jugendgesundheitsdienst
+Obergruppe: '98'
+Obergruppenbezeichnung: Haushaltstechnische Verrechnungen
+Gruppe: '981'
+Gruppenbezeichnung: Verrechnungen zwischen Kapiteln
+Titel: '98101'
+Titelbezeichnung: Allgemeine interne Verrechnungen
+Betrag: '2500'
+FID: 35/41/4100/98/981/98101
+path: ./35/41/4100/98/981/98101.yaml
