@@ -40,7 +40,7 @@ async function fetchYAML(path) {
 }
 
 const navStack = [];
-let chart, root, series;
+let root, series;
 
 async function prepareTreeData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
@@ -184,12 +184,13 @@ async function renderTreemap(path = "") {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("back-btn").onclick = () => {
+window.onload = function() {
+  const backBtn = document.getElementById("back-btn");
+  backBtn.onclick = () => {
     if (navStack.length > 0) {
       const prevPath = navStack.pop();
       renderTreemap(prevPath);
     }
   };
   renderTreemap();
-});
+};
