@@ -1,33 +1,35 @@
 body, html {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-  overflow: hidden;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    font-family: Arial, sans-serif;
 }
 
-#back-btn {
-  position: absolute;
-  right: 24px;
-  top: 24px;
-  z-index: 10;
-  padding: 8px 16px;
-  font-size: 16px;
-  background: #e0e7ff;
-  border: 1px solid #333;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background .2s;
+#treemap {
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow: auto;
+    position: relative;
 }
 
-#back-btn:hover {
-  background: #cbd5e1;
+.treemap-rect {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid #333;
+    background: #e0e7ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #222;
+    cursor: pointer;
+    transition: background 0.2s;
+    overflow: hidden;
+    text-align: center;
 }
 
-#chartdiv {
-  width: 100vw;
-  height: 100vh;
-  box-sizing: border-box;
-  position: relative;
+.treemap-rect:hover {
+    background: #cbd5e1;
 }
