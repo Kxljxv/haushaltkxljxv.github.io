@@ -93,6 +93,12 @@ function showError(msg) {
   else alert(msg);
 }
 
+function normalizePath(base, folder) {
+  // Ensure we always end up with "base/folder/" with no double slash
+  if (base && !base.endsWith("/")) base += "/";
+  return `${base || ""}${folder}/`;
+}
+
 async function renderTreemap(path = "") {
   console.debug("[renderTreemap] path =", path);
   showBackButton();
@@ -125,13 +131,8 @@ async function renderTreemap(path = "") {
   }
 
   try {
-    // Create root element
     root = am5.Root.new("chartdiv");
-    
-    // Set themes
     root.setThemes([am5themes_Animated.new(root)]);
-    
-    // Create series
     series = root.container.children.push(
       am5hierarchy.Treemap.new(root, {
         singleBranchOnly: false,
@@ -156,13 +157,13 @@ async function renderTreemap(path = "") {
       getFillFromSprite: false,
       labelText: "{category}"
     });
-    
+
     // Create a template for items (rectangles)
     const rectangleTemplate = series.rectangles.template;
-    
+
     // Apply tooltip to template
     rectangleTemplate.set("tooltip", tooltip);
-    
+
     // Enable pointer cursor for clickable fields
     rectangleTemplate.setAll({
       interactive: true,
@@ -181,9 +182,15 @@ async function renderTreemap(path = "") {
     // Click to drilldown
     rectangleTemplate.events.on("click", function(ev) {
       const data = ev.target.dataItem && ev.target.dataItem.dataContext;
+      console.debug("[rectangle click]", data);
       if (data && data.hasFolder) {
+        // Use normalized path to prevent double slashes
+        const nextPath = normalizePath(path, data.folderName);
+        console.debug(`[drilldown] navStack.push(${path}), nextPath: ${nextPath}`);
         navStack.push(path);
-        renderTreemap(`${path}${data.folderName}/`);
+        renderTreemap(nextPath);
+      } else {
+        console.debug("[rectangle click] No folder to drill down to for:", data);
       }
     });
 
@@ -201,6 +208,7 @@ window.onload = function() {
   backBtn.onclick = () => {
     if (navStack.length > 0) {
       const prevPath = navStack.pop();
+      console.debug("[backBtn] Going back to:", prevPath);
       renderTreemap(prevPath);
     }
   };
