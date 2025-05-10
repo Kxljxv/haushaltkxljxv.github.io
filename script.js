@@ -38,7 +38,7 @@ async function fetchYAML(path) {
 }
 
 const navStack = [];
-let chart, root, series;
+let root, series;
 
 async function prepareTreeData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
@@ -122,7 +122,7 @@ async function renderTreemap(path = "") {
   }));
 
   // Custom tooltip html on hover
-  series.squares.template.adapters.add("tooltipHTML", function(html, target) {
+  series.rectangles.template.adapters.add("tooltipHTML", function(html, target) {
     const data = target.dataItem && target.dataItem.dataContext;
     if (data && data.yaml) {
       return `<b>${data.name}</b><br/>${formatYamlTooltip(data.yaml)}`;
@@ -131,13 +131,13 @@ async function renderTreemap(path = "") {
   });
 
   // Enable pointer cursor for clickable fields
-  series.squares.template.setAll({
+  series.rectangles.template.setAll({
     interactive: true,
     cursorOverStyle: "pointer"
   });
 
   // Click to drilldown
-  series.squares.template.events.on("click", function(ev) {
+  series.rectangles.template.events.on("click", function(ev) {
     const data = ev.target.dataItem && ev.target.dataItem.dataContext;
     if (data && data.hasFolder) {
       navStack.push(path);
