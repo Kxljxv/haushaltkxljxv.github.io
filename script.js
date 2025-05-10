@@ -125,8 +125,13 @@ async function renderTreemap(path = "") {
   }
 
   try {
+    // Create root element
     root = am5.Root.new("chartdiv");
+    
+    // Set themes
     root.setThemes([am5themes_Animated.new(root)]);
+    
+    // Create series
     series = root.container.children.push(
       am5hierarchy.Treemap.new(root, {
         singleBranchOnly: false,
@@ -146,17 +151,26 @@ async function renderTreemap(path = "") {
       return;
     }
 
-    series.data.setAll([tree]);
-
-    // Tooltip
-    series.set("tooltip", am5.Tooltip.new(root, {
+    // Configure tooltip
+    const tooltip = am5.Tooltip.new(root, {
       getFillFromSprite: false,
-      labelHTML: ""
-    }));
+      labelText: "{category}"
+    });
+    
+    // Create a template for items (rectangles)
+    const rectangleTemplate = series.rectangles.template;
+    
+    // Apply tooltip to template
+    rectangleTemplate.set("tooltip", tooltip);
+    
+    // Enable pointer cursor for clickable fields
+    rectangleTemplate.setAll({
+      interactive: true,
+      cursorOverStyle: "pointer"
+    });
 
     // Custom tooltip html on hover
-    // FIX: amCharts v5 uses rectangles, not squares!
-    series.rectangles.template.adapters.add("tooltipHTML", function(html, target) {
+    rectangleTemplate.adapters.add("tooltipHTML", function(html, target) {
       const data = target.dataItem && target.dataItem.dataContext;
       if (data && data.yaml) {
         return `<b>${data.name}</b><br/>${formatYamlTooltip(data.yaml)}`;
@@ -164,20 +178,17 @@ async function renderTreemap(path = "") {
       return html;
     });
 
-    // Enable pointer cursor for clickable fields
-    series.rectangles.template.setAll({
-      interactive: true,
-      cursorOverStyle: "pointer"
-    });
-
     // Click to drilldown
-    series.rectangles.template.events.on("click", function(ev) {
+    rectangleTemplate.events.on("click", function(ev) {
       const data = ev.target.dataItem && ev.target.dataItem.dataContext;
       if (data && data.hasFolder) {
         navStack.push(path);
         renderTreemap(`${path}${data.folderName}/`);
       }
     });
+
+    // Set data to series
+    series.data.setAll([tree]);
 
   } catch (err) {
     console.error("[renderTreemap] amCharts rendering error:", err);
