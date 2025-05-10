@@ -16,6 +16,7 @@ function pickLabel(yamlObj) {
 
 async function fetchJSON(path) {
   try {
+    console.debug("[fetchJSON]", path);
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     return await response.json();
@@ -27,6 +28,7 @@ async function fetchJSON(path) {
 
 async function fetchYAML(path) {
   try {
+    console.debug("[fetchYAML]", path);
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     const text = await response.text();
@@ -42,7 +44,10 @@ let chart, root, series;
 
 async function prepareTreeData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
-  if (!dirData) return {children: []};
+  if (!dirData) {
+    console.warn("[prepareTreeData] No directory data found for path", path);
+    return { children: [] };
+  }
 
   const children = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
@@ -59,12 +64,16 @@ async function prepareTreeData(path) {
           hasFolder: dirData.subdirectories.includes(folderName),
         };
         children.push(node);
+      } else {
+        console.warn(`[prepareTreeData] Invalid Betrag in ${file}:`, yaml.Betrag);
       }
+    } else {
+      console.warn(`[prepareTreeData] No valid YAML or Betrag in ${file}`);
     }
   }
-  // sort biggest first for best layout
   children.sort((a, b) => b.value - a.value);
-  return {children};
+  console.debug("[prepareTreeData] Children:", children);
+  return { children };
 }
 
 function showBackButton() {
@@ -78,70 +87,101 @@ function formatYamlTooltip(yaml) {
     .join('<br/>');
 }
 
+function showError(msg) {
+  const chartdiv = document.getElementById("chartdiv");
+  if (chartdiv) chartdiv.innerHTML = `<div style="color:red;font-weight:bold;">${msg}</div>`;
+  else alert(msg);
+}
+
 async function renderTreemap(path = "") {
+  console.debug("[renderTreemap] path =", path);
   showBackButton();
 
-  // Prepare data for amCharts
-  const tree = await prepareTreeData(path);
-
-  // Clear old chart if any
-  if (root) {
-    root.dispose();
+  let tree;
+  try {
+    tree = await prepareTreeData(path);
+  } catch (err) {
+    console.error("[renderTreemap] Error in prepareTreeData:", err);
+    showError("Fehler beim Datenaufbau.");
+    return;
   }
 
-  // Use window.am5, window.am5themes_Animated, and window.am5hierarchy
-  root = window.am5.Root.new("chartdiv");
+  // Defensive: clear old chart/root
+  if (root) {
+    try { root.dispose(); } catch(e) { console.warn("root.dispose failed", e); }
+    root = undefined;
+  }
+  const chartdiv = document.getElementById("chartdiv");
+  chartdiv.innerHTML = ""; // Clear chart div
 
-  root.setThemes([
-    window.am5themes_Animated.new(root)
-  ]);
+  // Defensive: check for am5, am5hierarchy
+  if (typeof am5 === "undefined" || typeof am5.Root === "undefined") {
+    showError("amCharts 5 core (am5) not loaded!");
+    return;
+  }
+  if (typeof am5hierarchy === "undefined" || typeof am5hierarchy.Treemap === "undefined") {
+    showError("amCharts 5 hierarchy module (am5hierarchy.js) not loaded!");
+    return;
+  }
 
-  series = root.container.children.push(
-    window.am5hierarchy.Treemap.new(root, {
-      singleBranchOnly: false,
-      downDepth: 1,
-      upDepth: 1,
-      valueField: "value",
-      categoryField: "name",
-      childDataField: "children",
-      orientation: "vertical",
-      nodePaddingOuter: 0,
-      nodePaddingInner: 1
-    })
-  );
+  try {
+    root = am5.Root.new("chartdiv");
+    root.setThemes([am5themes_Animated.new(root)]);
+    series = root.container.children.push(
+      am5hierarchy.Treemap.new(root, {
+        singleBranchOnly: false,
+        downDepth: 1,
+        upDepth: 1,
+        valueField: "value",
+        categoryField: "name",
+        childDataField: "children",
+        orientation: "vertical",
+        nodePaddingOuter: 0,
+        nodePaddingInner: 1
+      })
+    );
 
-  // Set data
-  series.data.setAll([tree]);
-
-  // Tooltip
-  series.set("tooltip", window.am5.Tooltip.new(root, {
-    getFillFromSprite: false,
-    labelHTML: ""
-  }));
-
-  // Custom tooltip html on hover
-  series.squares.template.adapters.add("tooltipHTML", function(html, target) {
-    const data = target.dataItem && target.dataItem.dataContext;
-    if (data && data.yaml) {
-      return `<b>${data.name}</b><br/>${formatYamlTooltip(data.yaml)}`;
+    if (!tree.children || tree.children.length === 0) {
+      showError("Keine gültigen Daten gefunden.");
+      return;
     }
-    return html;
-  });
 
-  // Enable pointer cursor for clickable fields
-  series.squares.template.setAll({
-    interactive: true,
-    cursorOverStyle: "pointer"
-  });
+    series.data.setAll([tree]);
 
-  // Click to drilldown
-  series.squares.template.events.on("click", function(ev) {
-    const data = ev.target.dataItem && ev.target.dataItem.dataContext;
-    if (data && data.hasFolder) {
-      navStack.push(path);
-      renderTreemap(`${path}${data.folderName}/`);
-    }
-  });
+    // Tooltip
+    series.set("tooltip", am5.Tooltip.new(root, {
+      getFillFromSprite: false,
+      labelHTML: ""
+    }));
+
+    // Custom tooltip html on hover
+    series.squares.template.adapters.add("tooltipHTML", function(html, target) {
+      const data = target.dataItem && target.dataItem.dataContext;
+      if (data && data.yaml) {
+        return `<b>${data.name}</b><br/>${formatYamlTooltip(data.yaml)}`;
+      }
+      return html;
+    });
+
+    // Enable pointer cursor for clickable fields
+    series.squares.template.setAll({
+      interactive: true,
+      cursorOverStyle: "pointer"
+    });
+
+    // Click to drilldown
+    series.squares.template.events.on("click", function(ev) {
+      const data = ev.target.dataItem && ev.target.dataItem.dataContext;
+      if (data && data.hasFolder) {
+        navStack.push(path);
+        renderTreemap(`${path}${data.folderName}/`);
+      }
+    });
+
+  } catch (err) {
+    console.error("[renderTreemap] amCharts rendering error:", err);
+    showError("Visualisierungs-Fehler: " + err);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
