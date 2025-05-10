@@ -118,17 +118,10 @@ async function renderTreemap(path = "") {
   // Tooltip
   series.set("tooltip", am5.Tooltip.new(root, {
     getFillFromSprite: false,
-    labelText: "{category}\n{value}"
+    labelHTML: ""
   }));
 
   // Custom tooltip html on hover
-  series.labels.template.adapters.add("text", function(text, target) {
-    if (target.dataItem && target.dataItem.dataContext && target.dataItem.dataContext.yaml) {
-      return target.dataItem.dataContext.name;
-    }
-    return text;
-  });
-
   series.squares.template.adapters.add("tooltipHTML", function(html, target) {
     const data = target.dataItem && target.dataItem.dataContext;
     if (data && data.yaml) {
@@ -137,9 +130,15 @@ async function renderTreemap(path = "") {
     return html;
   });
 
+  // Enable pointer cursor for clickable fields
+  series.squares.template.setAll({
+    interactive: true,
+    cursorOverStyle: "pointer"
+  });
+
   // Click to drilldown
   series.squares.template.events.on("click", function(ev) {
-    const data = ev.target.dataItem.dataContext;
+    const data = ev.target.dataItem && ev.target.dataItem.dataContext;
     if (data && data.hasFolder) {
       navStack.push(path);
       renderTreemap(`${path}${data.folderName}/`);
