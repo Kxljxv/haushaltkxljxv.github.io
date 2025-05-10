@@ -1,4 +1,3 @@
-// Priority list for label selection
 const LABEL_PRIORITY = [
     "Titelbezeichnung",
     "Gruppenbezeichnung",
@@ -8,7 +7,6 @@ const LABEL_PRIORITY = [
     "Bereichsbezeichnung"
 ];
 
-// Helper: Pick highest-priority label from YAML object
 function pickLabel(yamlObj) {
     for (const key of LABEL_PRIORITY) {
         if (yamlObj[key]) return yamlObj[key];
@@ -16,7 +14,6 @@ function pickLabel(yamlObj) {
     return "Unbenannt";
 }
 
-// Fetch JSON file (directory listing)
 async function fetchJSON(path) {
     try {
         const response = await fetch(path);
@@ -28,7 +25,6 @@ async function fetchJSON(path) {
     }
 }
 
-// Fetch and parse YAML file
 async function fetchYAML(path) {
     try {
         const response = await fetch(path);
@@ -41,18 +37,10 @@ async function fetchYAML(path) {
     }
 }
 
-// Main rendering function
-async function renderTreemap(path = "") {
-    const container = document.getElementById("treemap");
-    container.innerHTML = ""; // Remove old SVGs/divs
-
-    const dirData = await fetchJSON(`${path}directory.json`);
-    if (!dirData) {
-        container.textContent = "Fehler beim Laden der Daten.";
-        return;
-    }
-
-    // Gather data
+// Helper for building data for amCharts
+async function buildTreemapData(path, dirData = null) {
+    if (!dirData) dirData = await fetchJSON(`${path}directory.json`);
+    if (!dirData) return [];
     const entries = [];
     for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
         const yaml = await fetchYAML(`${path}${file}`);
@@ -61,67 +49,68 @@ async function renderTreemap(path = "") {
             if (!isNaN(betrag)) {
                 entries.push({
                     name: pickLabel(yaml),
-                    betrag: betrag,
-                    folderName: file.replace(".yaml", ""),
-                    hasFolder: dirData.subdirectories.includes(file.replace(".yaml", ""))
+                    value: betrag,
+                    folderName: file.replace('.yaml', ''),
+                    hasFolder: dirData.subdirectories.includes(file.replace('.yaml', ''))
                 });
             }
         }
     }
+    return entries;
+}
 
-    if (entries.length === 0) {
-        container.textContent = "Keine gültigen Daten gefunden.";
+async function renderTreemap(path = "") {
+    // Remove old root if present
+    if (window.am5root) window.am5root.dispose();
+
+    let dirData = await fetchJSON(`${path}directory.json`);
+    if (!dirData) {
+        document.getElementById("treemap").innerHTML = "Fehler beim Laden der Daten.";
+        return;
+    }
+    let entries = await buildTreemapData(path, dirData);
+
+    if (!entries || entries.length === 0) {
+        document.getElementById("treemap").innerHTML = "Keine gültigen Daten gefunden.";
         return;
     }
 
-    // Sort descending by betrag (largest first)
-    entries.sort((a, b) => b.betrag - a.betrag);
+    // Create root and chart
+    let root = am5.Root.new("treemap");
+    window.am5root = root; // for proper dispose later
 
-    // D3 Treemap: Build hierarchy
-    const root = d3.hierarchy({children: entries})
-        .sum(d => d.betrag);
+    root.setThemes([am5themes_Animated.new(root)]);
 
-    // Get container size
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 600;
+    let chart = root.container.children.push(
+      am5percent.Treemap.new(root, {
+        singleBranchOnly: false,
+        homeText: "Zurück",
+        valueField: "value",
+        categoryField: "name",
+        childDataField: "children",
+        layoutAlgorithm: "squarified",
+        width: am5.p100,
+        height: am5.p100,
+      })
+    );
 
-    // Treemap layout
-    d3.treemap()
-        .size([width, height])
-        .paddingOuter(2)
-        .paddingInner(2)
-        (root);
+    // When a rectangle is clicked
+    chart.series.children.each(series => {
+        series.labels.template.setAll({
+            oversizedBehavior: "truncate",
+            fill: am5.color(0x222222),
+        });
+    });
 
-    // To get the biggest in the upper-right, smallest in lower-left,
-    // mirror horizontally and vertically
-    // (d3 fills from top-left, so we flip by subtracting positions from width/height)
-    for (const node of root.leaves()) {
-        const d = node.data;
-        const x = width - node.x1; // horizontal mirror
-        const y = height - node.y1; // vertical mirror
-        const w = node.x1 - node.x0;
-        const h = node.y1 - node.y0;
-
-        const div = document.createElement("div");
-        div.className = "treemap-rect";
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
-        div.style.width = `${w}px`;
-        div.style.height = `${h}px`;
-        div.textContent = d.name;
-
-        if (d.hasFolder) {
-            div.addEventListener('click', (e) => {
-                e.stopPropagation();
-                renderTreemap(`${path}${d.folderName}/`);
-            });
-        } else {
-            div.style.cursor = "default";
+    chart.series.get("rectangles").events.on("click", async function(ev) {
+        const dataItem = ev.target.dataItem.dataContext;
+        if (dataItem.hasFolder) {
+            root.dispose(); // Clear before going into folder
+            await renderTreemap(`${path}${dataItem.folderName}/`);
         }
+    });
 
-        container.appendChild(div);
-    }
+    chart.data.setAll(entries);
 }
 
-// Init
 renderTreemap();
