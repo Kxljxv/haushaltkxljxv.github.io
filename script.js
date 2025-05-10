@@ -17,6 +17,7 @@ function pickLabel(yamlObj) {
 async function fetchJSON(path) {
   try {
     const response = await fetch(path);
+    console.log(`[fetchJSON] Fetching: ${path} Status: ${response.status}`);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     return await response.json();
   } catch (error) {
@@ -29,12 +30,13 @@ async function fetchJSON(path) {
 async function fetchYAML(path) {
   try {
     const response = await fetch(path);
+    console.log(`[fetchYAML] Fetching: ${path} Status: ${response.status}`);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     const text = await response.text();
     return jsyaml.load(text);
   } catch (error) {
     console.error(`Error fetching or parsing YAML file (${path}):`, error);
-    alert(`Error fetching or parsing YAML file (${path}): ${error}`);
+    // alert(`Error fetching or parsing YAML file (${path}): ${error}`);
     return null;
   }
 }
@@ -45,12 +47,17 @@ let root;
 async function prepareTreeData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) {
-    console.log(`No directory data for path: ${path}`);
+    console.warn(`[prepareTreeData] No directory.json at: ${path}directory.json`);
+    return {children: []};
+  }
+  if (!dirData.files || !Array.isArray(dirData.files)) {
+    console.warn(`[prepareTreeData] directory.json at ${path} has no files array.`);
     return {children: []};
   }
 
   const children = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
+    console.log(`[prepareTreeData] Considering file: ${file}`);
     const yaml = await fetchYAML(`${path}${file}`);
     if (yaml && yaml.Betrag) {
       const betrag = parseFloat(yaml.Betrag);
@@ -61,16 +68,19 @@ async function prepareTreeData(path) {
           value: betrag,
           yaml: yaml,
           folderName: folderName,
-          hasFolder: dirData.subdirectories.includes(folderName)
+          hasFolder: (dirData.subdirectories || []).includes(folderName)
         };
         children.push(node);
+        console.log(`[prepareTreeData] Added node:`, node);
+      } else {
+        console.warn(`[prepareTreeData] YAML ${file} has invalid Betrag: ${yaml.Betrag}`);
       }
+    } else {
+      console.warn(`[prepareTreeData] YAML ${file} missing or no Betrag`);
     }
   }
-  // sort biggest first for best layout
   children.sort((a, b) => b.value - a.value);
-
-  console.log("Prepared tree data:", {children});
+  console.log("[prepareTreeData] Final children:", children);
   return {children};
 }
 
@@ -87,13 +97,21 @@ function formatYamlTooltip(yaml) {
 
 async function renderTreemap(path = "") {
   showBackButton();
-
-  // Prepare data for amCharts
+  console.log(`[renderTreemap] Rendering for path: '${path}'`);
   const tree = await prepareTreeData(path);
 
   // Remove old chart root if any
   if (root) {
     root.dispose();
+  }
+
+  // If no children, show a message
+  if (!tree.children || tree.children.length === 0) {
+    document.getElementById("chartdiv").innerHTML = "<div style='color:red;padding:2em;'>No data found for this directory.</div>";
+    console.warn(`[renderTreemap] No children for path: '${path}'`);
+    return;
+  } else {
+    document.getElementById("chartdiv").innerHTML = ""; // clear old message
   }
 
   // Create root element
@@ -146,12 +164,14 @@ async function renderTreemap(path = "") {
   // Click to drilldown
   series.rectangles.template.events.on("click", function(ev) {
     const data = ev.target.dataItem && ev.target.dataItem.dataContext;
-    console.log("Rectangle clicked:", data);
+    console.log("[Treemap] Rectangle clicked data:", data);
     if (data && data.hasFolder) {
       navStack.push(path);
       renderTreemap(`${path}${data.folderName}/`);
+    } else if(data) {
+      console.log("[Treemap] Rectangle clicked has no folder.");
     } else {
-      console.log("Clicked rectangle has no folder.");
+      console.log("[Treemap] Click event, but no data found.");
     }
   });
 
@@ -164,8 +184,7 @@ async function renderTreemap(path = "") {
     console.log("Treemap rectangles:", nodes);
   });
 
-  // Debug: log chart loaded
-  console.log("Rendered treemap for path:", path);
+  console.log(`[renderTreemap] Rendered treemap for path: '${path}'`);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
