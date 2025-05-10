@@ -21,6 +21,7 @@ async function fetchJSON(path) {
     return await response.json();
   } catch (error) {
     console.error(`Error fetching JSON file (${path}):`, error);
+    alert(`Error fetching JSON file (${path}): ${error}`);
     return null;
   }
 }
@@ -33,6 +34,7 @@ async function fetchYAML(path) {
     return jsyaml.load(text);
   } catch (error) {
     console.error(`Error fetching or parsing YAML file (${path}):`, error);
+    alert(`Error fetching or parsing YAML file (${path}): ${error}`);
     return null;
   }
 }
@@ -42,7 +44,10 @@ let root;
 
 async function prepareTreeData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
-  if (!dirData) return {children: []};
+  if (!dirData) {
+    console.log(`No directory data for path: ${path}`);
+    return {children: []};
+  }
 
   const children = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
@@ -64,6 +69,8 @@ async function prepareTreeData(path) {
   }
   // sort biggest first for best layout
   children.sort((a, b) => b.value - a.value);
+
+  console.log("Prepared tree data:", {children});
   return {children};
 }
 
@@ -84,7 +91,7 @@ async function renderTreemap(path = "") {
   // Prepare data for amCharts
   const tree = await prepareTreeData(path);
 
-  // Clear old chart if any
+  // Remove old chart root if any
   if (root) {
     root.dispose();
   }
@@ -139,11 +146,26 @@ async function renderTreemap(path = "") {
   // Click to drilldown
   series.rectangles.template.events.on("click", function(ev) {
     const data = ev.target.dataItem && ev.target.dataItem.dataContext;
+    console.log("Rectangle clicked:", data);
     if (data && data.hasFolder) {
       navStack.push(path);
       renderTreemap(`${path}${data.folderName}/`);
+    } else {
+      console.log("Clicked rectangle has no folder.");
     }
   });
+
+  // Debug: log rectangles after chart is ready
+  series.events.on("datavalidated", function() {
+    let nodes = [];
+    series.rectangles.each(rect => {
+      nodes.push(rect.dataItem && rect.dataItem.dataContext);
+    });
+    console.log("Treemap rectangles:", nodes);
+  });
+
+  // Debug: log chart loaded
+  console.log("Rendered treemap for path:", path);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
