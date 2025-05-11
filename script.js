@@ -89,7 +89,7 @@ const centerTextPlugin = {
     if (!options.display) return;
     const { ctx, chartArea: { width, height, left, top } } = chart;
     ctx.save();
-    ctx.font = options.font || 'bold 1.7rem Arial';
+    ctx.font = options.font || 'bold 2rem Arial';
     ctx.fillStyle = options.color || '#222';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -98,20 +98,25 @@ const centerTextPlugin = {
   }
 };
 
-async function renderPieChart(path = "") {
+async function renderDonut(path = "") {
   showBackButton();
   renderTitle(path);
 
   const pieData = await preparePieData(path);
 
+  // Remove any old canvas and create a new one, always
+  let container = document.querySelector(".relative");
+  let oldCanvas = document.getElementById("pie-chart");
+  if (oldCanvas) oldCanvas.remove();
+  const canvas = document.createElement("canvas");
+  canvas.id = "pie-chart";
+  container.appendChild(canvas);
+
   if (!pieData.length) {
-    document.getElementById("pie-chart").replaceWith(document.createElement('canvas'));
-    document.getElementById("pie-chart").id = "pie-chart";
     document.getElementById("chart-title").textContent = "Keine gültigen Daten gefunden.";
     return;
   }
 
-  // Destroy old chart if exists
   if (chartInstance) {
     chartInstance.destroy();
     chartInstance = null;
@@ -123,17 +128,10 @@ async function renderPieChart(path = "") {
   const bgColors = pieData.map((_, i) => getRandomColor(i));
   const sum = values.reduce((a, b) => a + b, 0);
 
-  // Create new canvas if needed (for drilldown/back)
-  let canvas = document.getElementById("pie-chart");
-  if (!canvas) {
-    canvas = document.createElement("canvas");
-    canvas.id = "pie-chart";
-    document.querySelector(".relative").appendChild(canvas);
-  }
   const ctx = canvas.getContext("2d");
 
   chartInstance = new Chart(ctx, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels: labels,
       datasets: [{
@@ -144,6 +142,7 @@ async function renderPieChart(path = "") {
     },
     options: {
       responsive: true,
+      cutout: '65%',
       plugins: {
         legend: { display: false }, // No default legend
         datalabels: {
@@ -154,25 +153,14 @@ async function renderPieChart(path = "") {
           formatter: function(value, context) {
             return context.chart.data.labels[context.dataIndex];
           },
-          // Draw a line (leader) from slice to label (arrow effect)
-          listeners: {
-            enter: function(context) {
-              context.hovered = true;
-              return true;
-            },
-            leave: function(context) {
-              context.hovered = false;
-              return true;
-            }
-          },
-          offset: 20,
+          offset: 22,
           borderRadius: 4,
           backgroundColor: null,
           borderWidth: 0,
           borderColor: null,
           display: true,
-          // Use Chart.js v4's "drawTime" to draw after arcs for leader lines
-          // NOTE: For real arrows, you'd need a more custom plugin, but this gives the "callout" effect.
+          // leaderLine is not natively supported in Chart.js 4, but
+          // offset+anchor+align = callout effect
         },
         centerText: {
           display: true,
@@ -197,10 +185,9 @@ async function renderPieChart(path = "") {
         if (!elements.length) return;
         const idx = elements[0].index;
         const entry = pieData[idx];
-        console.debug("[pie click]", entry);
         if (entry.hasFolder) {
           navStack.push(path);
-          await renderPieChart((path && !path.endsWith("/")) ? path + "/" + entry.folderName + "/" : path + entry.folderName + "/");
+          await renderDonut((path && !path.endsWith("/")) ? path + "/" + entry.folderName + "/" : path + entry.folderName + "/");
         }
       }
     },
@@ -212,8 +199,8 @@ window.onload = function() {
   document.getElementById("back-btn").onclick = () => {
     if (navStack.length > 0) {
       const prevPath = navStack.pop();
-      renderPieChart(prevPath);
+      renderDonut(prevPath);
     }
   };
-  renderPieChart();
+  renderDonut();
 };
