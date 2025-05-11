@@ -7,18 +7,39 @@ const LABEL_PRIORITY = [
   "Bereichsbezeichnung"
 ];
 
-// For breadcrumbs
-function pathParts(path) {
-  const trimmed = path.replace(/\/+$/, '').replace(/^\/+/, '');
-  if (!trimmed) return [];
-  return trimmed.split('/').filter(Boolean);
-}
-
 function pickLabel(yamlObj) {
   for (const key of LABEL_PRIORITY) {
     if (yamlObj[key]) return yamlObj[key];
   }
   return "Unbenannt";
+}
+
+// Returns an array of {id, name} for each directory in path
+async function getPathTitles(path) {
+  const parts = [];
+  let curr = "";
+  let ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
+  for (let i = 0; i < ids.length; ++i) {
+    curr = ids.slice(0, i + 1).join("/") + "/";
+    let dirJson = await fetchJSON(curr + "directory.json");
+    if (!dirJson) {
+      // fallback: show id if directory.json missing
+      parts.push({ id: ids[i], name: ids[i] });
+      continue;
+    }
+    // Try to get title from folder's own yaml, if it exists
+    let yamlFile = ids[i] + ".yaml";
+    if (dirJson.files && dirJson.files.includes(yamlFile)) {
+      let yaml = await fetchYAML(curr + yamlFile);
+      if (yaml) {
+        parts.push({ id: ids[i], name: pickLabel(yaml) });
+        continue;
+      }
+    }
+    // fallback: show id
+    parts.push({ id: ids[i], name: ids[i] });
+  }
+  return parts;
 }
 
 async function fetchJSON(path) {
@@ -68,23 +89,21 @@ async function getPieData(path = "") {
 }
 
 async function hasSubdirectory(path, folderName) {
-  // Try to fetch the subdirectory's directory.json
   const testPath = `${path}${folderName}/directory.json`;
   const subDir = await fetchJSON(testPath);
   return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
 }
 
 function gradientColors(n) {
-  // Generates n gradient colors, inspired by the ECharts "Gradient Stacked Area" demo
   const stops = [
-    ['#4F8EF7', '#3EDBF0'], // blue-cyan
-    ['#A770EF', '#FDB99B'], // purple-orange
-    ['#43E97B', '#38F9D7'], // green-teal
-    ['#667EEA', '#764BA2'], // blue-purple
-    ['#F7971E', '#FFD200'], // orange-yellow
-    ['#F953C6', '#B91D73'], // pink-magenta
-    ['#43CBFF', '#9708CC'], // blue-violet
-    ['#11998e', '#38ef7d']  // green
+    ['#4F8EF7', '#3EDBF0'],
+    ['#A770EF', '#FDB99B'],
+    ['#43E97B', '#38F9D7'],
+    ['#667EEA', '#764BA2'],
+    ['#F7971E', '#FFD200'],
+    ['#F953C6', '#B91D73'],
+    ['#43CBFF', '#9708CC'],
+    ['#11998e', '#38ef7d']
   ];
   let result = [];
   for (let i = 0; i < n; ++i) {
@@ -101,39 +120,47 @@ function gradientColors(n) {
   return result;
 }
 
-function renderBreadcrumb(path) {
+async function renderBreadcrumb(path) {
   const nav = document.getElementById("breadcrumb");
   nav.innerHTML = "";
-  const parts = pathParts(path);
-  let crumbs = [{ name: "Root", path: "" }];
-  let current = "";
-  for (const p of parts) {
-    current = current ? `${current}/${p}` : p;
-    crumbs.push({ name: p, path: current });
-  }
-  for (let i = 0; i < crumbs.length; ++i) {
-    const c = crumbs[i];
-    const el = document.createElement("button");
-    el.className = "mx-1 px-3 py-1 glass hover:bg-blue-200 hover:text-blue-900 transition";
-    el.innerText = c.name;
-    el.onclick = () => {
-      // Go to this level
+  const ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
+  let currPath = "";
+  // always start with "Root"
+  const rootBtn = document.createElement("button");
+  rootBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
+  rootBtn.innerText = "Root";
+  rootBtn.onclick = () => {
+    navStack.length = 0;
+    renderPie("");
+  };
+  nav.appendChild(rootBtn);
+
+  if (ids.length === 0) return;
+
+  // Now for each folder, show its label
+  const titleParts = await getPathTitles(path);
+  for (let i = 0; i < ids.length; ++i) {
+    const sep = document.createElement("span");
+    sep.innerText = "›";
+    sep.className = "mx-1 text-gray-400";
+    nav.appendChild(sep);
+
+    currPath = ids.slice(0, i + 1).join("/") + "/";
+    const crumbBtn = document.createElement("button");
+    crumbBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
+    crumbBtn.innerText = titleParts[i] ? titleParts[i].name : ids[i];
+
+    crumbBtn.onclick = () => {
       navStack.length = 0;
-      if (c.path !== path) navStack.push(...pathParts(c.path).slice(0, -1).map((_, idx, arr) => arr.slice(0, idx + 1).join("/") + "/"));
-      renderPie(c.path ? c.path + "/" : "");
+      if (currPath !== path) navStack.push(...ids.slice(0, i).map((_, idx, arr) => arr.slice(0, idx + 1).join("/") + "/"));
+      renderPie(currPath);
     };
-    nav.appendChild(el);
-    if (i < crumbs.length - 1) {
-      const sep = document.createElement("span");
-      sep.innerText = "›";
-      sep.className = "mx-1 text-gray-400";
-      nav.appendChild(sep);
-    }
+    nav.appendChild(crumbBtn);
   }
 }
 
 async function renderPie(path = "") {
-  renderBreadcrumb(path);
+  await renderBreadcrumb(path);
 
   const pieData = await getPieData(path);
   if (!pieData.length) {
@@ -142,22 +169,19 @@ async function renderPie(path = "") {
     return;
   }
 
-  // Generate gradient colors for each part
   const colors = gradientColors(pieData.length);
 
   const chartDom = document.getElementById('main-pie');
   const myChart = echarts.init(chartDom);
 
-  // Apply color gradients to each segment
   pieData.forEach((d, idx) => { d.itemStyle = { color: colors[idx] }; });
 
-  // Custom tooltip HTML
   function tooltipHtml(param) {
     if (!param.data) return "";
     return `
       <div class='echarts-tooltip-custom'>
-        <div class='font-bold text-lg mb-1'>${param.data.name}</div>
-        <div class='text-base'>
+        <div class='font-bold text-base mb-1'>${param.data.name}</div>
+        <div class='text-xs'>
           Betrag: <b>${param.data.value.toLocaleString('de-DE')}</b>
         </div>
       </div>
@@ -168,12 +192,12 @@ async function renderPie(path = "") {
     tooltip: {
       show: true,
       trigger: 'item',
-      backgroundColor: 'rgba(255,255,255,0.85)',
-      borderRadius: 16,
+      backgroundColor: 'rgba(255,255,255,0.92)',
+      borderRadius: 12,
       borderWidth: 0,
       className: 'echarts-tooltip-custom',
-      textStyle: { color: '#222', fontSize: 16 },
-      extraCssText: 'backdrop-filter: blur(12px);',
+      textStyle: { color: '#222', fontSize: 14 },
+      extraCssText: 'backdrop-filter: blur(8px);',
       formatter: tooltipHtml
     },
     legend: { show: false },
@@ -187,13 +211,13 @@ async function renderPie(path = "") {
           formatter: function(param) {
             return `${param.data.name}\n${param.data.value.toLocaleString('de-DE')}`;
           },
-          fontSize: 15,
+          fontSize: 13,
           color: "#111"
         },
         labelLine: {
           show: true,
-          length: 18,
-          length2: 10
+          length: 12,
+          length2: 6
         },
         emphasis: {
           scale: true
@@ -218,7 +242,7 @@ async function renderPie(path = "") {
 
   // Back button logic
   let backBtn = document.getElementById('back-btn');
-  backBtn.style.display = navStack.length > 0 ? 'block' : 'none';
+  backBtn.style.display = navStack.length > 0 ? 'inline-block' : 'none';
   backBtn.onclick = () => {
     if (navStack.length > 0) {
       const prevPath = navStack.pop();
