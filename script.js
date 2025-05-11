@@ -216,8 +216,8 @@ async function renderPie(path = "") {
         },
         labelLine: {
           show: true,
-          length: 12,
-          length2: 6
+          length: 24,
+          length2: 12
         },
         emphasis: {
           scale: true
