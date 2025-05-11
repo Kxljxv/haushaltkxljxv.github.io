@@ -39,134 +39,98 @@ async function fetchYAML(path) {
   }
 }
 
-const navStack = [];
-let chart;
-
-function showBackButton() {
-  const btn = document.getElementById("back-btn");
-  btn.style.display = navStack.length > 0 ? "block" : "none";
-}
-
-function formatYamlTooltip(yaml) {
-  if (!yaml) return "";
-  return Object.entries(yaml)
-    .map(([k, v]) => `<b>${k}</b>: ${v}`)
-    .join('<br/>');
-}
-
-function showError(msg) {
-  const chartdiv = document.getElementById("chartdiv");
-  if (chartdiv) chartdiv.innerHTML = `<div style="color:red;font-weight:bold;">${msg}</div>`;
-  else alert(msg);
-}
-
-// Build ECharts treemap data recursively for current directory
-async function buildTreemapData(path = "") {
+async function preparePieData(path = "") {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) {
-    console.warn("[buildTreemapData] No directory data found for path", path);
+    console.warn("[preparePieData] No directory data found for path", path);
     return [];
   }
-  const children = [];
+
+  const result = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
     const yaml = await fetchYAML(`${path}${file}`);
     if (yaml && yaml.Betrag) {
       const betrag = parseFloat(yaml.Betrag);
       if (!isNaN(betrag)) {
-        const folderName = file.replace(".yaml", "");
-        const hasFolder = dirData.subdirectories.includes(folderName);
-        children.push({
-          id: `${path}${file}`,
+        result.push({
           name: pickLabel(yaml),
           value: betrag,
-          hasFolder,
-          yaml,
-          folderName,
-          // ECharts specific: mark as leaf if it's not a folder
-          leaf: !hasFolder
+          labelText: `${pickLabel(yaml)} (${betrag.toLocaleString("de-DE")})`
         });
+      } else {
+        console.warn(`[preparePieData] Invalid Betrag in ${file}:`, yaml.Betrag);
       }
+    } else {
+      console.warn(`[preparePieData] No valid YAML or Betrag in ${file}`);
     }
   }
-  // Biggest first
-  children.sort((a, b) => b.value - a.value);
-  return children;
+  result.sort((a, b) => b.value - a.value);
+  console.debug("[preparePieData] Pie data:", result);
+  return result;
 }
 
-async function renderTreemap(path = "") {
-  console.debug("[renderTreemap] path =", path);
-  showBackButton();
-
-  const chartdiv = document.getElementById("chartdiv");
-  if (!chart) {
-    chart = echarts.init(chartdiv, null, {renderer: "canvas"});
-  } else {
-    chart.clear();
-  }
-
-  let children;
-  try {
-    children = await buildTreemapData(path);
-  } catch (err) {
-    console.error("[renderTreemap] Error in buildTreemapData:", err);
-    showError("Fehler beim Datenaufbau.");
+async function renderPieChart(path = "") {
+  const chartDiv = document.getElementById("chartdiv");
+  if (!chartDiv) {
+    console.error("No #chartdiv found in DOM.");
     return;
   }
+  const data = await preparePieData(path);
 
-  if (!children || children.length === 0) {
-    showError("Keine gültigen Daten gefunden.");
-    return;
+  // Destroy old chart if any
+  if (window.myEchart) {
+    window.myEchart.dispose();
   }
+  window.myEchart = echarts.init(chartDiv);
 
   const option = {
+    title: {
+      text: 'Haushaltsdaten',
+      left: 'center'
+    },
     tooltip: {
-      formatter: function(params) {
-        if (params.data && params.data.yaml) {
-          return `<div style="max-width:400px">${formatYamlTooltip(params.data.yaml)}</div>`;
-        }
-        return params.name;
+      trigger: 'item',
+      formatter: params => {
+        return `<b>${params.data.name}</b><br/>Betrag: ${params.data.value.toLocaleString("de-DE")} (${params.percent}%)`;
+      }
+    },
+    legend: {
+      orient: 'vertical',
+      left: 10,
+      top: 40,
+      icon: "arrow",
+      // Custom formatter to show arrow, title and Betrag
+      formatter: name => {
+        const item = data.find(d => d.name === name);
+        return item ? `➔ ${item.labelText}` : name;
+      },
+      textStyle: {
+        fontSize: 14
       }
     },
     series: [
       {
-        type: 'treemap',
-        data: children,
-        leafDepth: 1,
-        roam: false,
+        name: 'Haushaltsdaten',
+        type: 'pie',
+        radius: '60%',
+        center: ['60%', '50%'],
+        data: data,
         label: {
-          show: true,
-          formatter: '{b}',
-          fontSize: 14
-        },
-        breadcrumb: { show: false }
+          formatter: '{b} ({d}%)'
+        }
       }
     ]
   };
 
-  chart.setOption(option);
+  window.myEchart.setOption(option);
 
-  // ECharts click event for drilldown
-  chart.off('click'); // Remove any previous click
-  chart.on('click', async function(params) {
-    const data = params.data;
-    console.debug("[treemap click]", data);
-    if (data && data.hasFolder) {
-      navStack.push(path);
-      await renderTreemap(path + (path && !path.endsWith('/') ? '/' : '') + data.folderName + '/');
-    } else {
-      console.debug("[treemap click] No folder to drill down to for:", data);
-    }
+  // Debug: log click event
+  window.myEchart.on('click', params => {
+    console.debug("[ECharts Pie Segment Click]", params);
+    // For real drilldown, you could call renderPieChart with a new path here.
   });
 }
 
 window.onload = function() {
-  const backBtn = document.getElementById("back-btn");
-  backBtn.onclick = () => {
-    if (navStack.length > 0) {
-      const prevPath = navStack.pop();
-      console.debug("[backBtn] Going back to:", prevPath);
-      renderTreemap(prevPath);
-    }
-  };
-  renderTreemap();
+  renderPieChart();
 };
