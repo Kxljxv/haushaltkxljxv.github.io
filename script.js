@@ -38,12 +38,12 @@ async function fetchYAML(path) {
 }
 
 const navStack = [];
-let chart;
+let chartInstance = null;
 
-async function prepareDonutData(path) {
+async function preparePieData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) {
-    console.warn("[prepareDonutData] No directory data found for path", path);
+    console.warn("[preparePieData] No directory data found for path", path);
     return [];
   }
   const entries = [];
@@ -54,11 +54,11 @@ async function prepareDonutData(path) {
       if (!isNaN(betrag)) {
         const folderName = file.replace(".yaml", "");
         entries.push({
-          name: pickLabel(yaml),
+          label: pickLabel(yaml),
           value: betrag,
-          folderName,
           hasFolder: dirData.subdirectories.includes(folderName),
-          yaml
+          folderName: folderName,
+          yaml: yaml
         });
       }
     }
@@ -67,91 +67,153 @@ async function prepareDonutData(path) {
   return entries;
 }
 
+function getRandomColor(i) {
+  // Generate visually distinct pastel colors
+  const base = 200 + (i * 35) % 55;
+  return `hsl(${(i * 137.5) % 360}, 70%, ${base % 60 + 35}%)`;
+}
+
 function showBackButton() {
   const btn = document.getElementById("back-btn");
-  btn.classList.toggle('hidden', navStack.length === 0);
+  btn.style.display = navStack.length > 0 ? "block" : "none";
 }
 
-function formatTooltip(yaml) {
-  return Object.entries(yaml)
-    .map(([k, v]) => `<strong>${k}:</strong> ${v}`)
-    .join('<br>');
+function renderTitle(path) {
+  document.getElementById("chart-title").textContent = path ? `Haushalt: ${path}` : "Haushalt Pie Chart";
 }
 
-async function renderDonut(path = "") {
-  showBackButton();
-
-  // Remove old chart if present
-  if (chart) {
-    chart.destroy();
-    chart = undefined;
+// Center Text Plugin for Chart.js 4.x
+const centerTextPlugin = {
+  id: 'centerText',
+  afterDraw(chart, args, options) {
+    if (!options.display) return;
+    const { ctx, chartArea: { width, height, left, top } } = chart;
+    ctx.save();
+    ctx.font = options.font || 'bold 1.7rem Arial';
+    ctx.fillStyle = options.color || '#222';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(options.text, left + width / 2, top + height / 2);
+    ctx.restore();
   }
+};
 
-  const ctx = document.getElementById('donut-chart').getContext('2d');
-  const entries = await prepareDonutData(path);
+async function renderPieChart(path = "") {
+  showBackButton();
+  renderTitle(path);
 
-  if (!entries.length) {
-    ctx.clearRect(0, 0, 520, 520);
-    ctx.font = "20px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Keine gültigen Daten gefunden.", 260, 260);
+  const pieData = await preparePieData(path);
+
+  if (!pieData.length) {
+    document.getElementById("pie-chart").replaceWith(document.createElement('canvas'));
+    document.getElementById("pie-chart").id = "pie-chart";
+    document.getElementById("chart-title").textContent = "Keine gültigen Daten gefunden.";
     return;
   }
 
-  // Build data arrays for Chart.js
-  const labels = entries.map(e => e.name);
-  const data = entries.map(e => e.value);
-  const bgColors = entries.map((_,i) => `hsl(${(i*360/entries.length)|0}, 65%, 70%)`);
+  // Destroy old chart if exists
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
 
-  chart = new Chart(ctx, {
-    type: 'doughnut',
+  // Prepare Chart.js data
+  const labels = pieData.map(e => e.label);
+  const values = pieData.map(e => e.value);
+  const bgColors = pieData.map((_, i) => getRandomColor(i));
+  const sum = values.reduce((a, b) => a + b, 0);
+
+  // Create new canvas if needed (for drilldown/back)
+  let canvas = document.getElementById("pie-chart");
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.id = "pie-chart";
+    document.querySelector(".relative").appendChild(canvas);
+  }
+  const ctx = canvas.getContext("2d");
+
+  chartInstance = new Chart(ctx, {
+    type: 'pie',
     data: {
       labels: labels,
       datasets: [{
-        data: data,
+        data: values,
         backgroundColor: bgColors,
-        borderWidth: 1,
+        borderWidth: 1
       }]
     },
     options: {
-      responsive: false,
+      responsive: true,
       plugins: {
-        legend: { position: "right" },
+        legend: { display: false }, // No default legend
+        datalabels: {
+          color: '#222',
+          align: 'end',
+          anchor: 'end',
+          font: { weight: 'bold', size: 14 },
+          formatter: function(value, context) {
+            return context.chart.data.labels[context.dataIndex];
+          },
+          // Draw a line (leader) from slice to label (arrow effect)
+          listeners: {
+            enter: function(context) {
+              context.hovered = true;
+              return true;
+            },
+            leave: function(context) {
+              context.hovered = false;
+              return true;
+            }
+          },
+          offset: 20,
+          borderRadius: 4,
+          backgroundColor: null,
+          borderWidth: 0,
+          borderColor: null,
+          display: true,
+          // Use Chart.js v4's "drawTime" to draw after arcs for leader lines
+          // NOTE: For real arrows, you'd need a more custom plugin, but this gives the "callout" effect.
+        },
+        centerText: {
+          display: true,
+          text: sum.toLocaleString() + " €",
+          color: "#222",
+          font: "bold 2.1rem Arial"
+        },
         tooltip: {
-          enabled: true,
           callbacks: {
             label: function(context) {
-              const entry = entries[context.dataIndex];
-              return [
-                `${entry.name}: ${entry.value.toLocaleString()}`,
-                ...Object.entries(entry.yaml).map(([k, v]) => `${k}: ${v}`)
-              ];
+              const entry = pieData[context.dataIndex];
+              let tip = `${entry.label}: ${entry.value.toLocaleString()} €`;
+              Object.entries(entry.yaml).slice(0,2).forEach(([k,v]) => {
+                tip += `\n${k}: ${v}`;
+              });
+              return tip;
             }
           }
         }
       },
       onClick: async function(evt, elements) {
-        if (elements.length > 0) {
-          const idx = elements[0].index;
-          const entry = entries[idx];
-          console.debug("[donut click]", entry);
-          if (entry && entry.hasFolder) {
-            navStack.push(path);
-            await renderDonut((path && !path.endsWith("/") ? path + "/" : path) + entry.folderName + "/");
-          }
+        if (!elements.length) return;
+        const idx = elements[0].index;
+        const entry = pieData[idx];
+        console.debug("[pie click]", entry);
+        if (entry.hasFolder) {
+          navStack.push(path);
+          await renderPieChart((path && !path.endsWith("/")) ? path + "/" + entry.folderName + "/" : path + entry.folderName + "/");
         }
       }
-    }
+    },
+    plugins: [ChartDataLabels, centerTextPlugin]
   });
 }
 
 window.onload = function() {
-  const backBtn = document.getElementById("back-btn");
-  backBtn.onclick = () => {
+  document.getElementById("back-btn").onclick = () => {
     if (navStack.length > 0) {
       const prevPath = navStack.pop();
-      renderDonut(prevPath);
+      renderPieChart(prevPath);
     }
   };
-  renderDonut();
+  renderPieChart();
 };
