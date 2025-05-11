@@ -14,9 +14,9 @@ function pickLabel(yamlObj) {
   return "Unbenannt";
 }
 
+// Fetch directory.json and YAML data
 async function fetchJSON(path) {
   try {
-    console.debug("[fetchJSON]", path);
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     return await response.json();
@@ -28,7 +28,6 @@ async function fetchJSON(path) {
 
 async function fetchYAML(path) {
   try {
-    console.debug("[fetchYAML]", path);
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     const text = await response.text();
@@ -39,98 +38,66 @@ async function fetchYAML(path) {
   }
 }
 
-async function preparePieData(path = "") {
+async function getPieData(path = "") {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) {
-    console.warn("[preparePieData] No directory data found for path", path);
     return [];
   }
-
-  const result = [];
+  const data = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
     const yaml = await fetchYAML(`${path}${file}`);
     if (yaml && yaml.Betrag) {
       const betrag = parseFloat(yaml.Betrag);
       if (!isNaN(betrag)) {
-        result.push({
-          name: pickLabel(yaml),
+        data.push({
           value: betrag,
-          labelText: `${pickLabel(yaml)} (${betrag.toLocaleString("de-DE")})`
+          name: pickLabel(yaml),
         });
-      } else {
-        console.warn(`[preparePieData] Invalid Betrag in ${file}:`, yaml.Betrag);
       }
-    } else {
-      console.warn(`[preparePieData] No valid YAML or Betrag in ${file}`);
     }
   }
-  result.sort((a, b) => b.value - a.value);
-  console.debug("[preparePieData] Pie data:", result);
-  return result;
+  return data;
 }
 
-async function renderPieChart(path = "") {
-  const chartDiv = document.getElementById("chartdiv");
-  if (!chartDiv) {
-    console.error("No #chartdiv found in DOM.");
-    return;
-  }
-  const data = await preparePieData(path);
-
-  // Destroy old chart if any
-  if (window.myEchart) {
-    window.myEchart.dispose();
-  }
-  window.myEchart = echarts.init(chartDiv);
+function renderPie(pieData) {
+  const chartDom = document.getElementById('main-pie');
+  const myChart = echarts.init(chartDom);
 
   const option = {
-    title: {
-      text: 'Haushaltsdaten',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      formatter: params => {
-        return `<b>${params.data.name}</b><br/>Betrag: ${params.data.value.toLocaleString("de-DE")} (${params.percent}%)`;
-      }
-    },
-    legend: {
-      orient: 'vertical',
-      left: 10,
-      top: 40,
-      icon: "arrow",
-      // Custom formatter to show arrow, title and Betrag
-      formatter: name => {
-        const item = data.find(d => d.name === name);
-        return item ? `➔ ${item.labelText}` : name;
-      },
-      textStyle: {
-        fontSize: 14
-      }
-    },
+    tooltip: { show: false },
+    legend: { show: false },
     series: [
       {
-        name: 'Haushaltsdaten',
         type: 'pie',
-        radius: '60%',
-        center: ['60%', '50%'],
-        data: data,
+        radius: '70%',
+        data: pieData,
         label: {
-          formatter: '{b} ({d}%)'
+          show: true,
+          formatter: function(param) {
+            // Show name and value with thousands separator
+            return `${param.name}\n${param.value.toLocaleString('de-DE')}`;
+          },
+          fontSize: 15,
+          color: "#111",
+          alignTo: 'edge',
+        },
+        labelLine: {
+          show: true,
+          length: 18,
+          length2: 10
+        },
+        emphasis: {
+          scale: true
         }
       }
     ]
   };
 
-  window.myEchart.setOption(option);
-
-  // Debug: log click event
-  window.myEchart.on('click', params => {
-    console.debug("[ECharts Pie Segment Click]", params);
-    // For real drilldown, you could call renderPieChart with a new path here.
-  });
+  myChart.setOption(option);
+  window.addEventListener('resize', () => { myChart.resize(); });
 }
 
-window.onload = function() {
-  renderPieChart();
+window.onload = async function () {
+  const pieData = await getPieData("");
+  renderPie(pieData);
 };
