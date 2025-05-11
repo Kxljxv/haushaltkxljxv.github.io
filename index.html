@@ -2,16 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>amCharts Treemap Visualization</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Flowbite Donut Chart Drilldown</title>
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@2.2.1/dist/flowbite.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    body, html { width: 100vw; height: 100vh; margin: 0; padding: 0; }
+    #chartdiv { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+    #back-btn { position: absolute; right: 24px; top: 24px; z-index: 10; }
+  </style>
 </head>
-<body>
-  <button id="back-btn" style="display:none;">⬅ Back</button>
-  <div id="chartdiv"></div>
-  <!-- Libraries at end of body for guaranteed DOM availability -->
-  <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-  <script src="https://cdn.amcharts.com/lib/5/hierarchy.js"></script>
-  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<body class="bg-gray-50">
+  <button id="back-btn" class="hidden px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded border border-indigo-400 text-indigo-800 font-semibold">⬅ Back</button>
+  <div id="chartdiv" class="relative">
+    <canvas id="donut-chart" width="520" height="520"></canvas>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.2.1/dist/flowbite.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
   <script src="script.js"></script>
 </body>
