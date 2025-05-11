@@ -16,7 +16,6 @@ function pickLabel(yamlObj) {
 
 async function fetchJSON(path) {
   try {
-    console.debug("[fetchJSON]", path);
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     return await response.json();
@@ -28,7 +27,6 @@ async function fetchJSON(path) {
 
 async function fetchYAML(path) {
   try {
-    console.debug("[fetchYAML]", path);
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     const text = await response.text();
@@ -40,160 +38,111 @@ async function fetchYAML(path) {
 }
 
 const navStack = [];
-let root, series;
+let chart;
 
-async function prepareTreeData(path) {
+async function prepareDonutData(path) {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) {
-    console.warn("[prepareTreeData] No directory data found for path", path);
-    return { children: [] };
+    console.warn("[prepareDonutData] No directory data found for path", path);
+    return [];
   }
-
-  const children = [];
+  const entries = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
     const yaml = await fetchYAML(`${path}${file}`);
     if (yaml && yaml.Betrag) {
       const betrag = parseFloat(yaml.Betrag);
       if (!isNaN(betrag)) {
         const folderName = file.replace(".yaml", "");
-        const node = {
+        entries.push({
           name: pickLabel(yaml),
           value: betrag,
-          yaml: yaml,
-          folderName: folderName,
+          folderName,
           hasFolder: dirData.subdirectories.includes(folderName),
-        };
-        children.push(node);
-      } else {
-        console.warn(`[prepareTreeData] Invalid Betrag in ${file}:`, yaml.Betrag);
+          yaml
+        });
       }
-    } else {
-      console.warn(`[prepareTreeData] No valid YAML or Betrag in ${file}`);
     }
   }
-  children.sort((a, b) => b.value - a.value);
-  console.debug("[prepareTreeData] Children:", children);
-  return { children };
+  entries.sort((a, b) => b.value - a.value);
+  return entries;
 }
 
 function showBackButton() {
   const btn = document.getElementById("back-btn");
-  btn.style.display = navStack.length > 0 ? "block" : "none";
+  btn.classList.toggle('hidden', navStack.length === 0);
 }
 
-function formatYamlTooltip(yaml) {
+function formatTooltip(yaml) {
   return Object.entries(yaml)
-    .map(([k, v]) => `<b>${k}</b>: ${v}`)
-    .join('<br/>');
+    .map(([k, v]) => `<strong>${k}:</strong> ${v}`)
+    .join('<br>');
 }
 
-function showError(msg) {
-  const chartdiv = document.getElementById("chartdiv");
-  if (chartdiv) chartdiv.innerHTML = `<div style="color:red;font-weight:bold;">${msg}</div>`;
-  else alert(msg);
-}
-
-function normalizePath(base, folder) {
-  // Ensure we always end up with "base/folder/" with no double slash
-  if (base && !base.endsWith("/")) base += "/";
-  return `${base || ""}${folder}/`;
-}
-
-async function renderTreemap(path = "") {
-  console.debug("[renderTreemap] path =", path);
+async function renderDonut(path = "") {
   showBackButton();
 
-  let tree;
-  try {
-    tree = await prepareTreeData(path);
-  } catch (err) {
-    console.error("[renderTreemap] Error in prepareTreeData:", err);
-    showError("Fehler beim Datenaufbau.");
+  // Remove old chart if present
+  if (chart) {
+    chart.destroy();
+    chart = undefined;
+  }
+
+  const ctx = document.getElementById('donut-chart').getContext('2d');
+  const entries = await prepareDonutData(path);
+
+  if (!entries.length) {
+    ctx.clearRect(0, 0, 520, 520);
+    ctx.font = "20px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Keine gültigen Daten gefunden.", 260, 260);
     return;
   }
 
-  // Defensive: clear old chart/root
-  if (root) {
-    try { root.dispose(); } catch(e) { console.warn("root.dispose failed", e); }
-    root = undefined;
-  }
-  const chartdiv = document.getElementById("chartdiv");
-  chartdiv.innerHTML = ""; // Clear chart div
+  // Build data arrays for Chart.js
+  const labels = entries.map(e => e.name);
+  const data = entries.map(e => e.value);
+  const bgColors = entries.map((_,i) => `hsl(${(i*360/entries.length)|0}, 65%, 70%)`);
 
-  // Defensive: check for am5, am5hierarchy
-  if (typeof am5 === "undefined" || typeof am5.Root === "undefined") {
-    showError("amCharts 5 core (am5) not loaded!");
-    return;
-  }
-  if (typeof am5hierarchy === "undefined" || typeof am5hierarchy.Treemap === "undefined") {
-    showError("amCharts 5 hierarchy module (am5hierarchy.js) not loaded!");
-    return;
-  }
-
-  try {
-    root = am5.Root.new("chartdiv");
-    root.setThemes([am5themes_Animated.new(root)]);
-    series = root.container.children.push(
-      am5hierarchy.Treemap.new(root, {
-        singleBranchOnly: false,
-        downDepth: 1,
-        upDepth: 1,
-        valueField: "value",
-        categoryField: "name",
-        childDataField: "children",
-        orientation: "vertical",
-        nodePaddingOuter: 0,
-        nodePaddingInner: 1
-      })
-    );
-
-    if (!tree.children || tree.children.length === 0) {
-      showError("Keine gültigen Daten gefunden.");
-      return;
-    }
-
-    // Configure tooltip
-    const tooltip = am5.Tooltip.new(root, {
-      getFillFromSprite: false,
-      labelText: "{category}"
-    });
-
-    // Create a template for items (rectangles)
-    const rectangleTemplate = series.rectangles.template;
-
-    // Apply tooltip to template
-    rectangleTemplate.set("tooltip", tooltip);
-
-    // Enable pointer cursor for clickable fields
-    rectangleTemplate.setAll({
-      interactive: true,
-      cursorOverStyle: "pointer"
-    });
-
-    // Custom tooltip html on hover
-
-    // Click to drilldown
-    rectangleTemplate.events.on("click", function(ev) {
-      const data = ev.target.dataItem && ev.target.dataItem.dataContext;
-      console.debug("[rectangle click]", data);
-      if (data && data.hasFolder) {
-        // Use normalized path to prevent double slashes
-        const nextPath = normalizePath(path, data.folderName);
-        console.debug(`[drilldown] navStack.push(${path}), nextPath: ${nextPath}`);
-        navStack.push(path);
-        renderTreemap(nextPath);
-      } else {
-        console.debug("[rectangle click] No folder to drill down to for:", data);
+  chart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: bgColors,
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: { position: "right" },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: function(context) {
+              const entry = entries[context.dataIndex];
+              return [
+                `${entry.name}: ${entry.value.toLocaleString()}`,
+                ...Object.entries(entry.yaml).map(([k, v]) => `${k}: ${v}`)
+              ];
+            }
+          }
+        }
+      },
+      onClick: async function(evt, elements) {
+        if (elements.length > 0) {
+          const idx = elements[0].index;
+          const entry = entries[idx];
+          console.debug("[donut click]", entry);
+          if (entry && entry.hasFolder) {
+            navStack.push(path);
+            await renderDonut((path && !path.endsWith("/") ? path + "/" : path) + entry.folderName + "/");
+          }
+        }
       }
-    });
-
-    // Set data to series
-    series.data.setAll([tree]);
-
-  } catch (err) {
-    console.error("[renderTreemap] amCharts rendering error:", err);
-    showError("Visualisierungs-Fehler: " + err);
-  }
+    }
+  });
 }
 
 window.onload = function() {
@@ -201,9 +150,8 @@ window.onload = function() {
   backBtn.onclick = () => {
     if (navStack.length > 0) {
       const prevPath = navStack.pop();
-      console.debug("[backBtn] Going back to:", prevPath);
-      renderTreemap(prevPath);
+      renderDonut(prevPath);
     }
   };
-  renderTreemap();
+  renderDonut();
 };
