@@ -268,12 +268,13 @@ async function renderDendro(path = "") {
   // Click to expand/collapse dynamically (NO navigation)
   myChart.off('click');
   myChart.on('click', async function(params) {
-    // Only expand if node has children but not yet loaded
     const node = params.data;
+    // Only expand if this is expandable (not a leaf, must have folderName and hasChildren)
+    if (!node || !node.folderName || !node.hasChildren) return;
+
     // Figure out its path
     let currPathArr = [];
     if (params.treeAncestors && params.treeAncestors.length > 1) {
-      // excluding root
       for (let i = 1; i < params.treeAncestors.length; ++i) {
         currPathArr.push(params.treeAncestors[i].data.folderName);
       }
@@ -282,12 +283,12 @@ async function renderDendro(path = "") {
     if (currPathArr.length > 0) {
       nodePath += currPathArr.join("/") + "/";
     }
-    // Only expand if node.hasChildren and !node.children
-    if (node.hasChildren && (node.children === null || node.children === undefined)) {
+
+    if (node.children === null || node.children === undefined) {
       await expandNode(node, nodePath);
       myChart.setOption({
         series: [{
-          data: [tree]
+          data: [myChart.getOption().series[0].data[0]]
         }]
       });
     }
