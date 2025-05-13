@@ -1,0 +1,20 @@
+.glass {
+  @apply rounded-lg bg-white/60 backdrop-blur-md shadow;
+  background: rgba(255,255,255,0.7);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10);
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+}
+/* ECharts custom tooltip styling */
+.echarts-tooltip-custom {
+  border-radius: 0.75rem !important;
+  backdrop-filter: blur(8px) !important;
+  background: rgba(255,255,255,0.92) !important;
+  color: #222 !important;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10) !important;
+  padding: 0.75rem 1.1rem !important;
+  font-size: 0.95rem !important;
+  font-family: inherit !important;
+  border: 1px solid rgba(200,200,200,0.13) !important;
+}
