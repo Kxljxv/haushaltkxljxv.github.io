@@ -14,7 +14,30 @@ function pickLabel(yamlObj) {
   return "Unbenannt";
 }
 
-// Returns an array of {id, name} for each directory in path
+async function fetchJSON(path) {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Failed to fetch ${path}`);
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function fetchYAML(path) {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Failed to fetch ${path}`);
+    const text = await response.text();
+    return jsyaml.load(text);
+  } catch {
+    return null;
+  }
+}
+
+const navStack = [];
+
+// Helper for breadcrumb titles
 async function getPathTitles(path) {
   const parts = [];
   let curr = "";
@@ -39,33 +62,16 @@ async function getPathTitles(path) {
   return parts;
 }
 
-async function fetchJSON(path) {
-  try {
-    const response = await fetch(path);
-    if (!response.ok) throw new Error(`Failed to fetch ${path}`);
-    return await response.json();
-  } catch {
-    return null;
-  }
+async function hasSubdirectory(path, folderName) {
+  const testPath = `${path}${folderName}/directory.json`;
+  const subDir = await fetchJSON(testPath);
+  return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
 }
 
-async function fetchYAML(path) {
-  try {
-    const response = await fetch(path);
-    if (!response.ok) throw new Error(`Failed to fetch ${path}`);
-    const text = await response.text();
-    return jsyaml.load(text);
-  } catch {
-    return null;
-  }
-}
-
-const navStack = [];
-
-async function getDendroTree(path = "") {
-  // Recursively build the dendrogram tree for the current directory
+// This function only fetches direct children, not recursive (for dynamic expansion)
+async function getChildren(path = "") {
   const dirData = await fetchJSON(`${path}directory.json`);
-  if (!dirData) return null;
+  if (!dirData) return [];
   const children = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
     const yaml = await fetchYAML(`${path}${file}`);
@@ -79,24 +85,14 @@ async function getDendroTree(path = "") {
         value: betrag,
         folderName,
         yaml,
-        children: hasChildren ? [{}] : undefined  // dummy child for click to expand
+        hasChildren,
+        children: hasChildren ? null : undefined // null signals "collapsable but not loaded yet"
       });
     }
   }
   // Order children by value descending
   children.sort((a, b) => b.value - a.value);
-
-  // Root node for this level
-  return {
-    name: path === "" ? "Root" : path.replace(/\/+$/, '').split('/').pop(),
-    children: children
-  };
-}
-
-async function hasSubdirectory(path, folderName) {
-  const testPath = `${path}${folderName}/directory.json`;
-  const subDir = await fetchJSON(testPath);
-  return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
+  return children;
 }
 
 function gradientColors(n) {
@@ -125,6 +121,7 @@ function gradientColors(n) {
   return result;
 }
 
+// Renders breadcrumb
 async function renderBreadcrumb(path) {
   const nav = document.getElementById("breadcrumb");
   nav.innerHTML = "";
@@ -163,19 +160,38 @@ async function renderBreadcrumb(path) {
   }
 }
 
+// Build the top-level tree node
+async function getRootTree(path = "") {
+  const children = await getChildren(path);
+  // Assign nice gradient color to each child node
+  const colors = gradientColors(children.length);
+  children.forEach((d, idx) => { d.itemStyle = { color: colors[idx] }; });
+  return {
+    name: path === "" ? "Root" : path.replace(/\/+$/, '').split('/').pop(),
+    children: children
+  };
+}
+
+// Dynamically expand children for a given node in ECharts tree option
+async function expandNode(node, path) {
+  if (node.children !== null && node.children !== undefined) return;
+  // Fetch children for this node
+  const newPath = path + node.folderName + "/";
+  const children = await getChildren(newPath);
+  const colors = gradientColors(children.length);
+  children.forEach((d, idx) => { d.itemStyle = { color: colors[idx] }; });
+  node.children = children;
+}
+
 async function renderDendro(path = "") {
   await renderBreadcrumb(path);
 
-  const tree = await getDendroTree(path);
+  const tree = await getRootTree(path);
   if (!tree || !tree.children || tree.children.length === 0) {
     document.getElementById("main-dendro").innerHTML = "Keine Daten vorhanden.";
     document.getElementById("back-btn").style.display = navStack.length > 0 ? 'block' : 'none';
     return;
   }
-
-  // Assign nice gradient color to each child node
-  const colors = gradientColors(tree.children.length);
-  tree.children.forEach((d, idx) => { d.itemStyle = { color: colors[idx] }; });
 
   const chartDom = document.getElementById('main-dendro');
   const myChart = echarts.init(chartDom);
@@ -249,14 +265,31 @@ async function renderDendro(path = "") {
 
   myChart.setOption(option);
 
+  // Click to expand/collapse dynamically (NO navigation)
   myChart.off('click');
   myChart.on('click', async function(params) {
-    const part = params.data;
-    if (!part || !part.folderName) return;
-    const hasChildren = await hasSubdirectory(path, part.folderName);
-    if (hasChildren) {
-      navStack.push(path);
-      renderDendro(`${path}${part.folderName}/`);
+    // Only expand if node has children but not yet loaded
+    const node = params.data;
+    // Figure out its path
+    let currPathArr = [];
+    if (params.treeAncestors && params.treeAncestors.length > 1) {
+      // excluding root
+      for (let i = 1; i < params.treeAncestors.length; ++i) {
+        currPathArr.push(params.treeAncestors[i].data.folderName);
+      }
+    }
+    let nodePath = path;
+    if (currPathArr.length > 0) {
+      nodePath += currPathArr.join("/") + "/";
+    }
+    // Only expand if node.hasChildren and !node.children
+    if (node.hasChildren && (node.children === null || node.children === undefined)) {
+      await expandNode(node, nodePath);
+      myChart.setOption({
+        series: [{
+          data: [tree]
+        }]
+      });
     }
   });
 
