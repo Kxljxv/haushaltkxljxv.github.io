@@ -35,38 +35,6 @@ async function fetchYAML(path) {
   }
 }
 
-const navStack = [];
-
-async function getPathTitles(path) {
-  const parts = [];
-  let curr = "";
-  let ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
-  for (let i = 0; i < ids.length; ++i) {
-    curr = ids.slice(0, i + 1).join("/") + "/";
-    let dirJson = await fetchJSON(curr + "directory.json");
-    if (!dirJson) {
-      parts.push({ id: ids[i], name: ids[i] });
-      continue;
-    }
-    let yamlFile = ids[i] + ".yaml";
-    if (dirJson.files && dirJson.files.includes(yamlFile)) {
-      let yaml = await fetchYAML(curr + yamlFile);
-      if (yaml) {
-        parts.push({ id: ids[i], name: pickLabel(yaml) });
-        continue;
-      }
-    }
-    parts.push({ id: ids[i], name: ids[i] });
-  }
-  return parts;
-}
-
-async function hasSubdirectory(path, folderName) {
-  const testPath = `${path}${folderName}/directory.json`;
-  const subDir = await fetchJSON(testPath);
-  return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
-}
-
 async function getChildren(path = "") {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) return [];
@@ -81,41 +49,19 @@ async function getChildren(path = "") {
       children.push({
         name: pickLabel(yaml),
         value: betrag,
-        folderName: hasChildren ? folderName : undefined, // only set this for expandable nodes!
-        yaml,
-        children: hasChildren ? [] : undefined // expandable nodes get empty array, leaves get undefined
+        folderName: hasChildren ? folderName : undefined, // only expandable nodes get folderName
+        children: hasChildren ? [] : undefined // empty array for expandable nodes, undefined for leaves
       });
     }
   }
-  // Order children by value descending
-  children.sort((a, b) => b.value - a.value);
+  children.sort((a, b) => b.value - a.value); // Sort descending by value
   return children;
 }
 
-function gradientColors(n) {
-  const stops = [
-    ['#4F8EF7', '#3EDBF0'],
-    ['#A770EF', '#FDB99B'],
-    ['#43E97B', '#38F9D7'],
-    ['#667EEA', '#764BA2'],
-    ['#F7971E', '#FFD200'],
-    ['#F953C6', '#B91D73'],
-    ['#43CBFF', '#9708CC'],
-    ['#11998e', '#38ef7d']
-  ];
-  let result = [];
-  for (let i = 0; i < n; ++i) {
-    let s = stops[i % stops.length];
-    result.push({
-      type: 'linear',
-      x: 0, y: 0, x2: 1, y2: 1,
-      colorStops: [
-        { offset: 0, color: s[0] },
-        { offset: 1, color: s[1] }
-      ]
-    });
-  }
-  return result;
+async function hasSubdirectory(path, folderName) {
+  const testPath = `${path}${folderName}/directory.json`;
+  const subDir = await fetchJSON(testPath);
+  return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
 }
 
 async function renderBreadcrumb(path) {
@@ -126,15 +72,11 @@ async function renderBreadcrumb(path) {
   const rootBtn = document.createElement("button");
   rootBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
   rootBtn.innerText = "Root";
-  rootBtn.onclick = () => {
-    navStack.length = 0;
-    renderDendro("");
-  };
+  rootBtn.onclick = () => renderDendro("");
   nav.appendChild(rootBtn);
 
   if (ids.length === 0) return;
 
-  const titleParts = await getPathTitles(path);
   for (let i = 0; i < ids.length; ++i) {
     const sep = document.createElement("span");
     sep.innerText = "›";
@@ -144,29 +86,10 @@ async function renderBreadcrumb(path) {
     currPath = ids.slice(0, i + 1).join("/") + "/";
     const crumbBtn = document.createElement("button");
     crumbBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
-    crumbBtn.innerText = titleParts[i] ? titleParts[i].name : ids[i];
-
-    crumbBtn.onclick = () => {
-      navStack.length = 0;
-      if (currPath !== path) navStack.push(...ids.slice(0, i).map((_, idx, arr) => arr.slice(0, idx + 1).join("/") + "/"));
-      renderDendro(currPath);
-    };
+    crumbBtn.innerText = ids[i];
+    crumbBtn.onclick = () => renderDendro(currPath);
     nav.appendChild(crumbBtn);
   }
-}
-
-async function buildTree(path = "", depth = 0, maxDepth = 2) {
-  // Only build the tree up to maxDepth initially for performance
-  const children = await getChildren(path);
-  const colors = gradientColors(children.length);
-  children.forEach((d, idx) => { d.itemStyle = { color: colors[idx] }; });
-  for (let i = 0; i < children.length; ++i) {
-    if (children[i].folderName && depth + 1 < maxDepth) {
-      // pre-load children up to maxDepth
-      children[i].children = await buildTree(path + children[i].folderName + "/", depth + 1, maxDepth);
-    }
-  }
-  return children;
 }
 
 async function renderDendro(path = "") {
@@ -174,70 +97,42 @@ async function renderDendro(path = "") {
 
   const rootNode = {
     name: path === "" ? "Root" : path.replace(/\/+$/, '').split('/').pop(),
-    children: await buildTree(path)
+    children: await getChildren(path)
   };
 
-  if (!rootNode.children || rootNode.children.length === 0) {
-    document.getElementById("main-dendro").innerHTML = "Keine Daten vorhanden.";
-    document.getElementById("back-btn").style.display = navStack.length > 0 ? 'block' : 'none';
-    return;
-  }
-
-  const chartDom = document.getElementById('main-dendro');
+  const chartDom = document.getElementById("main-dendro");
   const myChart = echarts.init(chartDom);
-
-  function tooltipHtml(param) {
-    if (!param.data) return "";
-    return `
-      <div class='echarts-tooltip-custom'>
-        <div class='font-bold text-base mb-1'>${param.data.name || ''}</div>
-        <div class='text-xs'>
-          Betrag: <b>${param.data.value !== undefined ? param.data.value.toLocaleString('de-DE') : ''}</b>
-        </div>
-      </div>
-    `;
-  }
 
   const option = {
     tooltip: {
       show: true,
       trigger: 'item',
-      backgroundColor: 'rgba(255,255,255,0.92)',
-      borderRadius: 12,
-      borderWidth: 0,
-      className: 'echarts-tooltip-custom',
-      textStyle: { color: '#222', fontSize: 14 },
-      extraCssText: 'backdrop-filter: blur(8px);',
-      formatter: tooltipHtml
+      formatter: function (params) {
+        return `${params.data.name}<br/>Betrag: ${params.data.value.toLocaleString('de-DE')}`;
+      }
     },
     series: [
       {
         type: 'tree',
         data: [rootNode],
-        top: '5%',
-        left: '5%',
-        bottom: '5%',
+        top: '2%',
+        left: '2%',
+        bottom: '2%',
         right: '20%',
         symbol: 'circle',
         symbolSize: 14,
         orient: 'LR',
-        edgeShape: 'polyline',
-        edgeForkPosition: '63%',
-        initialTreeDepth: 2,
+        expandAndCollapse: true,
+        initialTreeDepth: 1,
         lineStyle: {
           width: 2,
-          color: '#aaa'
+          color: '#ccc'
         },
         label: {
           position: 'left',
           verticalAlign: 'middle',
           align: 'right',
-          fontSize: 13,
-          formatter: function(param) {
-            let name = param.data.name || "";
-            let val = param.data.value !== undefined ? param.data.value.toLocaleString('de-DE') : "";
-            return `${name}\n${val}`;
-          }
+          fontSize: 12
         },
         leaves: {
           label: {
@@ -245,55 +140,26 @@ async function renderDendro(path = "") {
             verticalAlign: 'middle',
             align: 'left'
           }
-        },
-        expandAndCollapse: true,
-        animationDuration: 350,
-        animationDurationUpdate: 200
+        }
       }
     ]
   };
 
   myChart.setOption(option);
 
-  // Expand/collapse: dynamically load children only for expandable branch nodes
-  myChart.off('dblclick');
-  myChart.on('dblclick', async function(params) {
+  myChart.on('dblclick', async function (params) {
     const node = params.data;
-    // Only fetch and expand if node has a folderName and has not loaded children yet
-    if (!node || !node.folderName) return;
-    if (node.children && node.children.length > 0 && node.children[0].name) return; // already loaded real children
-    // Fetch children for this node if not loaded
-    const treeAncestors = params.treeAncestors || [];
-    let currPathArr = [];
-    if (treeAncestors.length > 1) {
-      for (let i = 1; i < treeAncestors.length; ++i) {
-        currPathArr.push(treeAncestors[i].data.folderName);
-      }
-    }
-    let nodePath = path;
-    if (currPathArr.length > 0) {
-      nodePath += currPathArr.join("/") + "/";
-    }
-    const newChildren = await buildTree(nodePath + node.folderName + "/");
+    if (!node.folderName) return; // Ignore leaves
+
+    const newChildren = await getChildren(path + node.folderName + "/");
     node.children = newChildren;
+
     myChart.setOption({
-      series: [{
-        data: [rootNode]
-      }]
+      series: [{ data: [rootNode] }]
     });
   });
 
-  // Back button logic
-  let backBtn = document.getElementById('back-btn');
-  backBtn.style.display = navStack.length > 0 ? 'inline-block' : 'none';
-  backBtn.onclick = () => {
-    if (navStack.length > 0) {
-      const prevPath = navStack.pop();
-      renderDendro(prevPath);
-    }
-  };
-
-  window.addEventListener('resize', () => { myChart.resize(); });
+  window.addEventListener('resize', () => myChart.resize());
 }
 
 window.onload = function () {
