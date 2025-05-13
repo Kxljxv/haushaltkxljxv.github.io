@@ -1,12 +1,24 @@
-html, body {
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background: #f5f6fa;
+/* TailwindCSS and Flowbite are used for UI styling, so this file is optional. */
+
+/* Glassmorphism style for UI elements like the back button and breadcrumbs */
+.glass {
+  @apply rounded-lg bg-white/60 backdrop-blur-md shadow;
+  background: rgba(255,255,255,0.7); /* Semi-transparent white background */
+  border-radius: 0.5rem; /* Rounded corners */
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10); /* Subtle shadow for depth */
+  border: 1px solid rgba(255,255,255,0.2); /* Light border for separation */
+  backdrop-filter: blur(8px); /* Adds a blur effect to the background */
 }
-#main-pie {
-  width: 100vw;
-  height: 100vh;
+
+/* Custom styling for ECharts tooltips */
+.echarts-tooltip-custom {
+  border-radius: 0.75rem !important; /* Rounded corners for tooltips */
+  backdrop-filter: blur(8px) !important; /* Blur effect for tooltips */
+  background: rgba(255,255,255,0.92) !important; /* Semi-opaque white background */
+  color: #222 !important; /* Dark text color for readability */
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10) !important; /* Subtle shadow */
+  padding: 0.75rem 1.1rem !important; /* Padding for spacing */
+  font-size: 0.95rem !important; /* Slightly smaller font for tooltips */
+  font-family: inherit !important; /* Inherit font family from the page */
+  border: 1px solid rgba(200,200,200,0.13) !important; /* Light border */
 }
