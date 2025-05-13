@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ECharts Dendrogram Visualization</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- TailwindCSS with Flowbite -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {} },
+      corePlugins: { preflight: false }
+    }
+  </script>
+  <link rel="stylesheet" href="Dendrogram.css" />
+</head>
+<body class="w-screen h-screen overflow-hidden select-none bg-gradient-to-br from-blue-100 to-blue-300">
+  <div class="flex flex-col items-center justify-start w-full h-full pt-1 relative">
+    <div class="flex items-center gap-2 mb-1 z-10 w-full px-2">
+      <button id="back-btn" class="glass px-2 py-1 text-blue-800 font-medium transition hover:bg-blue-200 hover:text-blue-900 text-xs hidden">
+        ⬅ Back
+      </button>
+      <nav id="breadcrumb" class="glass px-2 py-1 text-blue-900 font-medium flex items-center gap-1 text-xs"></nav>
+    </div>
+    <div id="main-dendro" class="w-full h-[94vh]"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+  <script src="Dendrogram.js"></script>
+</body>
+</html>
