@@ -108,7 +108,7 @@ async function renderDendro(path = "") {
       show: true,
       trigger: 'item',
       formatter: function (params) {
-        return `${params.data.name}<br/>Betrag: ${params.data.value.toLocaleString('de-DE')}`;
+        return `${params.data.name}<br/>Betrag: ${params.data.value !== undefined ? params.data.value.toLocaleString('de-DE') : ""}`;
       }
     },
     series: [
@@ -147,19 +147,46 @@ async function renderDendro(path = "") {
 
   myChart.setOption(option);
 
-  // Handle double-click on nodes
-  myChart.on('dblclick', async function (params) {
+  myChart.on('click', async function (params) {
     const node = params.data;
 
+    // If node is a leaf (no folderName), do something!
     if (!node.folderName) {
-      // Handle leaf node (e.g., display details in console or popup)
-      console.log(`Leaf clicked: ${node.name} - Betrag: ${node.value}`);
+      // EXAMPLE: Show leaf info in an alert or console
+      alert(
+        `Leaf clicked!\n\nTitel: ${node.name}\nBetrag: ${node.value ? node.value.toLocaleString('de-DE') : ""}`
+      );
+      // Or just log:
+      // console.log('Leaf clicked:', node);
       return;
     }
 
-    // Expand children for branch nodes
-    const newChildren = await getChildren(path + node.folderName + "/");
-    node.children = newChildren;
+    // Only one node per layer open: collapse all siblings, expand this one
+    // Find path to this node
+    let ancestors = params.treeAncestors || [];
+    let currPathArr = [];
+    if (ancestors.length > 1) {
+      for (let i = 1; i < ancestors.length; ++i) {
+        currPathArr.push(ancestors[i].data.folderName);
+      }
+    }
+    let nodePath = path;
+    if (currPathArr.length > 0) nodePath += currPathArr.join("/") + "/";
+
+    // Load new children for this node if not present or empty
+    if (!node.children || node.children.length === 0) {
+      node.children = await getChildren(nodePath + node.folderName + "/");
+    }
+
+    // Collapse all siblings on this layer except this node
+    let parent = ancestors.length > 0 ? ancestors[ancestors.length - 1].data : null;
+    if (parent && parent.children) {
+      parent.children.forEach(child => {
+        if (child !== node) {
+          child.children = []; // collapse
+        }
+      });
+    }
 
     myChart.setOption({
       series: [{ data: [rootNode] }]
