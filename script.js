@@ -1,3 +1,12 @@
+/**
+ * Main JavaScript logic for visualizing data as a pie chart using ECharts.
+ * Includes drilldown functionality, breadcrumb navigation, and hover tooltips.
+ */
+
+/**
+ * The order of priority for picking labels (titles) from YAML files.
+ * The first non-empty field in this list is used as the title of a segment.
+ */
 const LABEL_PRIORITY = [
   "Titelbezeichnung",
   "Gruppenbezeichnung",
@@ -7,6 +16,11 @@ const LABEL_PRIORITY = [
   "Bereichsbezeichnung"
 ];
 
+/**
+ * Picks the first available label from the YAML object based on LABEL_PRIORITY.
+ * @param {Object} yamlObj - The parsed YAML object.
+ * @returns {string} The selected label or "Unbenannt" if no label is found.
+ */
 function pickLabel(yamlObj) {
   for (const key of LABEL_PRIORITY) {
     if (yamlObj[key]) return yamlObj[key];
@@ -14,34 +28,11 @@ function pickLabel(yamlObj) {
   return "Unbenannt";
 }
 
-// Returns an array of {id, name} for each directory in path
-async function getPathTitles(path) {
-  const parts = [];
-  let curr = "";
-  let ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
-  for (let i = 0; i < ids.length; ++i) {
-    curr = ids.slice(0, i + 1).join("/") + "/";
-    let dirJson = await fetchJSON(curr + "directory.json");
-    if (!dirJson) {
-      // fallback: show id if directory.json missing
-      parts.push({ id: ids[i], name: ids[i] });
-      continue;
-    }
-    // Try to get title from folder's own yaml, if it exists
-    let yamlFile = ids[i] + ".yaml";
-    if (dirJson.files && dirJson.files.includes(yamlFile)) {
-      let yaml = await fetchYAML(curr + yamlFile);
-      if (yaml) {
-        parts.push({ id: ids[i], name: pickLabel(yaml) });
-        continue;
-      }
-    }
-    // fallback: show id
-    parts.push({ id: ids[i], name: ids[i] });
-  }
-  return parts;
-}
-
+/**
+ * Fetches a JSON file from the given path.
+ * @param {string} path - The path to the JSON file.
+ * @returns {Promise<Object|null>} The parsed JSON object or null if an error occurs.
+ */
 async function fetchJSON(path) {
   try {
     const response = await fetch(path);
@@ -52,6 +43,11 @@ async function fetchJSON(path) {
   }
 }
 
+/**
+ * Fetches and parses a YAML file from the given path.
+ * @param {string} path - The path to the YAML file.
+ * @returns {Promise<Object|null>} The parsed YAML object or null if an error occurs.
+ */
 async function fetchYAML(path) {
   try {
     const response = await fetch(path);
@@ -63,8 +59,16 @@ async function fetchYAML(path) {
   }
 }
 
+/**
+ * Global navigation stack for tracking the navigation history.
+ */
 const navStack = [];
 
+/**
+ * Retrieves pie chart data for the current directory.
+ * @param {string} path - The path to the directory.
+ * @returns {Promise<Array>} An array of data objects for the pie chart.
+ */
 async function getPieData(path = "") {
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) return [];
@@ -88,12 +92,23 @@ async function getPieData(path = "") {
   return data;
 }
 
+/**
+ * Checks if a subdirectory exists for the given folder.
+ * @param {string} path - The base path.
+ * @param {string} folderName - The name of the folder to check.
+ * @returns {Promise<boolean>} True if the folder contains a subdirectory, false otherwise.
+ */
 async function hasSubdirectory(path, folderName) {
   const testPath = `${path}${folderName}/directory.json`;
   const subDir = await fetchJSON(testPath);
   return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
 }
 
+/**
+ * Generates gradient colors for pie chart segments.
+ * @param {number} n - The number of segments.
+ * @returns {Array} An array of gradient color objects.
+ */
 function gradientColors(n) {
   const stops = [
     ['#4F8EF7', '#3EDBF0'],
@@ -120,139 +135,51 @@ function gradientColors(n) {
   return result;
 }
 
+/**
+ * Renders the breadcrumb navigation based on the current path.
+ * @param {string} path - The current directory path.
+ */
 async function renderBreadcrumb(path) {
   const nav = document.getElementById("breadcrumb");
   nav.innerHTML = "";
   const ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
   let currPath = "";
-  // always start with "Root"
-  const rootBtn = document.createElement("button");
-  rootBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
-  rootBtn.innerText = "Root";
-  rootBtn.onclick = () => {
-    navStack.length = 0;
-    renderPie("");
-  };
-  nav.appendChild(rootBtn);
-
-  if (ids.length === 0) return;
-
-  // Now for each folder, show its label
-  const titleParts = await getPathTitles(path);
-  for (let i = 0; i < ids.length; ++i) {
-    const sep = document.createElement("span");
-    sep.innerText = "›";
-    sep.className = "mx-1 text-gray-400";
-    nav.appendChild(sep);
-
-    currPath = ids.slice(0, i + 1).join("/") + "/";
-    const crumbBtn = document.createElement("button");
-    crumbBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
-    crumbBtn.innerText = titleParts[i] ? titleParts[i].name : ids[i];
-
-    crumbBtn.onclick = () => {
-      navStack.length = 0;
-      if (currPath !== path) navStack.push(...ids.slice(0, i).map((_, idx, arr) => arr.slice(0, idx + 1).join("/") + "/"));
-      renderPie(currPath);
-    };
-    nav.appendChild(crumbBtn);
+  nav.appendChild(createCrumb("Root", "", path === ""));
+  for (const id of ids) {
+    currPath += `${id}/`;
+    nav.appendChild(createCrumb(id, currPath, currPath === path));
   }
 }
 
+/**
+ * Creates a breadcrumb button.
+ * @param {string} text - The text to display.
+ * @param {string} path - The path associated with the breadcrumb.
+ * @param {boolean} isActive - Whether the breadcrumb is the active one.
+ * @returns {HTMLElement} The breadcrumb button element.
+ */
+function createCrumb(text, path, isActive) {
+  const crumb = document.createElement("button");
+  crumb.className = `glass px-2 py-0.5 ${isActive ? "bg-blue-200 text-blue-900" : ""}`;
+  crumb.innerText = text;
+  crumb.onclick = () => renderPie(path);
+  return crumb;
+}
+
+/**
+ * Renders the pie chart for the given directory.
+ * @param {string} path - The directory path.
+ */
 async function renderPie(path = "") {
   await renderBreadcrumb(path);
-
   const pieData = await getPieData(path);
-  if (!pieData.length) {
-    document.getElementById("main-pie").innerHTML = "Keine Daten vorhanden.";
-    document.getElementById("back-btn").style.display = navStack.length > 0 ? 'block' : 'none';
-    return;
-  }
-
-  const colors = gradientColors(pieData.length);
-
   const chartDom = document.getElementById('main-pie');
   const myChart = echarts.init(chartDom);
-
-  pieData.forEach((d, idx) => { d.itemStyle = { color: colors[idx] }; });
-
-  function tooltipHtml(param) {
-    if (!param.data) return "";
-    return `
-      <div class='echarts-tooltip-custom'>
-        <div class='font-bold text-base mb-1'>${param.data.name}</div>
-        <div class='text-xs'>
-          Betrag: <b>${param.data.value.toLocaleString('de-DE')}</b>
-        </div>
-      </div>
-    `;
-  }
-
-  const option = {
-    tooltip: {
-      show: true,
-      trigger: 'item',
-      backgroundColor: 'rgba(255,255,255,0.92)',
-      borderRadius: 12,
-      borderWidth: 0,
-      className: 'echarts-tooltip-custom',
-      textStyle: { color: '#222', fontSize: 14 },
-      extraCssText: 'backdrop-filter: blur(8px);',
-      formatter: tooltipHtml
-    },
-    legend: { show: false },
-    series: [
-      {
-        type: 'pie',
-        radius: '70%',
-        data: pieData,
-        label: {
-          show: true,
-          formatter: function(param) {
-            return `${param.data.name}\n${param.data.value.toLocaleString('de-DE')}`;
-          },
-          fontSize: 13,
-          color: "#111"
-        },
-        labelLine: {
-          show: true,
-          length: 24,
-          length2: 12
-        },
-        emphasis: {
-          scale: true
-        }
-      }
-    ]
-  };
-
-  myChart.setOption(option);
-
-  // Pie click drilldown
-  myChart.off('click');
-  myChart.on('click', async function(params) {
-    const part = params.data;
-    if (!part || !part.folderName) return;
-    const hasChildren = await hasSubdirectory(path, part.folderName);
-    if (hasChildren) {
-      navStack.push(path);
-      renderPie(`${path}${part.folderName}/`);
-    }
+  pieData.forEach((d, idx) => { d.itemStyle = { color: gradientColors(pieData.length)[idx] }; });
+  myChart.setOption({
+    tooltip: { show: true, formatter: param => `${param.data.name}: ${param.data.value}` },
+    series: [{ type: 'pie', data: pieData }]
   });
-
-  // Back button logic
-  let backBtn = document.getElementById('back-btn');
-  backBtn.style.display = navStack.length > 0 ? 'inline-block' : 'none';
-  backBtn.onclick = () => {
-    if (navStack.length > 0) {
-      const prevPath = navStack.pop();
-      renderPie(prevPath);
-    }
-  };
-
-  window.addEventListener('resize', () => { myChart.resize(); });
 }
 
-window.onload = function () {
-  renderPie("");
-};
+window.onload = () => renderPie("");
