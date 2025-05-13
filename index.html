@@ -8,12 +8,14 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    // TailwindCSS configuration to enable backdrop blur effects for glassmorphism styles
     tailwind.config = {
       theme: { extend: {} },
       corePlugins: { preflight: false }
     }
   </script>
   <style>
+    /* Glassmorphism style for UI elements like breadcrumbs and the back button */
     .glass {
       @apply rounded-lg bg-white/60 backdrop-blur-md shadow;
       background: rgba(255,255,255,0.7);
@@ -22,7 +24,7 @@
       border: 1px solid rgba(255,255,255,0.2);
       backdrop-filter: blur(8px);
     }
-    /* ECharts custom tooltip styling */
+    /* Custom styling for ECharts tooltips */
     .echarts-tooltip-custom {
       border-radius: 0.75rem !important;
       backdrop-filter: blur(8px) !important;
@@ -38,17 +40,25 @@
 </head>
 <body class="w-screen h-screen overflow-hidden select-none bg-gradient-to-br from-blue-100 to-blue-300">
   <div class="flex flex-col items-center justify-start w-full h-full pt-1 relative">
+    <!-- Navigation area containing the back button and breadcrumb -->
     <div class="flex items-center gap-2 mb-1 z-10 w-full px-2">
+      <!-- Back button to navigate to the parent directory -->
       <button id="back-btn" class="glass px-2 py-1 text-blue-800 font-medium transition hover:bg-blue-200 hover:text-blue-900 text-xs hidden">
         ⬅ Back
       </button>
+      <!-- Breadcrumb navigation to display the current path and allow quick jumps to parent directories -->
       <nav id="breadcrumb" class="glass px-2 py-1 text-blue-900 font-medium flex items-center gap-1 text-xs"></nav>
     </div>
+    <!-- Container for the pie chart -->
     <div id="main-pie" class="w-full h-[94vh]"></div>
   </div>
+  <!-- ECharts library for rendering the pie chart -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <!-- js-yaml library for parsing YAML files -->
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <!-- Flowbite library for UI components -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+  <!-- Main JavaScript file containing logic for chart rendering and navigation -->
   <script src="script.js"></script>
 </body>
 </html>
