@@ -33,7 +33,6 @@
       font-family: inherit !important;
       border: 1px solid rgba(200,200,200,0.13) !important;
     }
-    /* Loading spinner */
     .spinner {
       border: 4px solid #cbd5e1;
       border-top: 4px solid #2563eb;
@@ -64,8 +63,10 @@
       <div id="spinner" class="spinner mb-3" style="display:none;"></div>
       <div id="feedback-message" class="text-blue-800 text-base font-medium bg-white/70 rounded px-4 py-2 shadow glass" style="display:none;"></div>
     </div>
-    <!-- Container for the pie chart -->
-    <div id="main-pie" class="w-full h-[94vh]" aria-label="Pie chart"></div>
+    <!-- Pie chart container centered using flexbox -->
+    <div class="flex-grow w-full flex items-center justify-center">
+      <div id="main-pie" class="w-full md:w-[600px] h-[60vh] md:h-[70vh] max-w-[98vw] max-h-[75vh]" aria-label="Pie chart"></div>
+    </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
