@@ -111,29 +111,42 @@ class TreeNode {
     }
 
     calculateLayerSizes() {
-        // Collect all values at this level across the tree
-        const layerValues = new Map(); // Map<level, number[]>
+        // First, collect all values for each level across all open branches
+        const layerValues = new Map(); // Map<level, Array<{value: number, node: TreeNode}>>
         this.collectLayerValues(layerValues);
-
-        // Calculate sizes for each layer
-        for (const [level, values] of layerValues.entries()) {
+    
+        // For each level, calculate and set sizes
+        layerValues.forEach((nodes, level) => {
+            const values = nodes.map(n => Math.abs(n.value || 0));
             const maxVal = Math.max(...values);
             const minVal = Math.min(...values);
-
-            // Find all nodes at this level and set their sizes
-            this.setLayerNodeSizes(level, minVal, maxVal);
-        }
+    
+            nodes.forEach(({node}) => {
+                const value = Math.abs(node.value || 0);
+                if (maxVal === minVal) {
+                    node.symbolSize = (MIN_NODE_SIZE + MAX_NODE_SIZE) / 2;
+                } else {
+                    const scale = (value - minVal) / (maxVal - minVal);
+                    node.symbolSize = MIN_NODE_SIZE + scale * (MAX_NODE_SIZE - MIN_NODE_SIZE);
+                }
+            });
+        });
     }
+
 
     collectLayerValues(layerValues) {
         if (!this._children) return;
-
+    
         this._children.forEach(node => {
             if (!layerValues.has(node.level)) {
                 layerValues.set(node.level, []);
             }
-            layerValues.get(node.level).push(Math.abs(node.value || 0));
-
+            // Only include nodes that don't have children or aren't expanded
+            if (!node.hasChildren || !node._expanded) {
+                layerValues.get(node.level).push({value: node.value, node: node});
+            }
+    
+            // If the node is expanded, collect its children's values
             if (node._expanded) {
                 node.collectLayerValues(layerValues);
             }
