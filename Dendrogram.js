@@ -123,25 +123,43 @@ async function renderBreadcrumb(path) {
 }
 
 let myChart = null;
+let rootData = null;
+
+async function initializeChart() {
+  if (!rootData) {
+    rootData = {
+      name: "Root",
+      children: await getChildren(""),
+      fullPath: ""
+    };
+  }
+}
+
+// Helper function to find a node in the tree
+function findNode(tree, path) {
+  if (!path || path === "") return tree;
+  const parts = path.split('/').filter(Boolean);
+  let current = tree;
+
+  for (const part of parts) {
+    if (!current.children) return null;
+    current = current.children.find(child => child.folderName === part);
+    if (!current) return null;
+  }
+  return current;
+}
 
 async function renderDendro(path = "") {
   debug("Rendering dendrogram for path:", path);
   await renderBreadcrumb(path);
 
-  const rootNode = {
-    name: path === "" ? "Root" : path.replace(/\/+$/, '').split('/').pop(),
-    children: await getChildren(path),
-    fullPath: path
-  };
+  // Initialize root data if not exists
+  await initializeChart();
 
   const chartDom = document.getElementById("main-dendro");
-  
-  // Dispose of previous chart instance if it exists
-  if (myChart) {
-    myChart.dispose();
+  if (!myChart) {
+    myChart = echarts.init(chartDom);
   }
-  
-  myChart = echarts.init(chartDom);
 
   const option = {
     tooltip: {
@@ -155,7 +173,7 @@ async function renderDendro(path = "") {
     },
     series: [{
       type: 'tree',
-      data: [rootNode],
+      data: [rootData],
       top: '2%',
       left: '2%',
       bottom: '2%',
@@ -164,7 +182,7 @@ async function renderDendro(path = "") {
       symbolSize: 14,
       orient: 'LR',
       expandAndCollapse: true,
-      initialTreeDepth: -1, // Show all levels initially
+      initialTreeDepth: 1,
       lineStyle: {
         width: 2,
         color: '#ccc'
@@ -222,9 +240,20 @@ async function renderDendro(path = "") {
     // Handle expandable nodes
     const newPath = node.fullPath ? node.fullPath + '/' : node.folderName + '/';
     debug("Loading children for path:", newPath);
-    
-    // Load the new view
-    renderDendro(newPath);
+
+    // Find the clicked node in the tree structure
+    const targetNode = findNode(rootData, node.fullPath);
+    if (targetNode) {
+      // Load children if they haven't been loaded yet
+      if (!targetNode.children || targetNode.children.length === 0) {
+        targetNode.children = await getChildren(newPath);
+      }
+
+      // Update the chart
+      myChart.setOption({
+        series: [{ data: [rootData] }]
+      });
+    }
   });
 
   // Handle window resize
