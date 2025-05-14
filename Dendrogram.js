@@ -7,10 +7,7 @@ const LABEL_PRIORITY = [
   "Bereichsbezeichnung"
 ];
 
-function debug(message, data) {
-  console.log(`[Debug] ${message}`, data);
-}
-
+// Helper: get the best label for a node
 function pickLabel(yamlObj) {
   for (const key of LABEL_PRIORITY) {
     if (yamlObj[key]) return yamlObj[key];
@@ -23,84 +20,102 @@ async function fetchJSON(path) {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     return await response.json();
-  } catch (error) {
-    debug(`Error fetching JSON from ${path}:`, error);
+  } catch {
     return null;
   }
 }
-
 async function fetchYAML(path) {
   try {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     const text = await response.text();
     return jsyaml.load(text);
-  } catch (error) {
-    debug(`Error fetching YAML from ${path}:`, error);
+  } catch {
     return null;
   }
 }
-
 async function hasSubdirectory(path, folderName) {
   const testPath = `${path}${folderName}/directory.json`;
-  debug("Checking for subdirectory:", testPath);
   const subDir = await fetchJSON(testPath);
-  const hasChildren = !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
-  debug(`Folder ${folderName} has children:`, hasChildren);
-  return hasChildren;
+  return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
 }
-
 async function getChildren(path = "") {
-  debug("Getting children for path:", path);
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) return [];
-  
   const children = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
     const yaml = await fetchYAML(`${path}${file}`);
     if (yaml && yaml.Betrag) {
       const betrag = parseFloat(yaml.Betrag);
       if (isNaN(betrag)) continue;
-      
       const folderName = file.replace('.yaml', '');
-      const hasChildren = await hasSubdirectory(path, folderName);
-      
+      let hasChildren = await hasSubdirectory(path, folderName);
       children.push({
         name: pickLabel(yaml),
         value: betrag,
         folderName: folderName,
-        fullPath: path + folderName,
+        fullPath: path + folderName + '/',
         hasChildren: hasChildren,
-        children: hasChildren ? [] : undefined,
-        isLeaf: !hasChildren
+        _fetched: false,
+        children: hasChildren ? null : undefined // null means not yet loaded, undefined means leaf
       });
     }
   }
   children.sort((a, b) => b.value - a.value);
-  debug("Found children:", children);
   return children;
 }
 
+// --------- TREE STATE & UI ---------
+let treeData = null;   // The single tree object used by ECharts
+let currentPath = "";  // Track for breadcrumb & back-btn
 let myChart = null;
-let treeData = null;
 
-async function buildInitialTree() {
+async function buildRootTree() {
   treeData = {
     name: "Root",
+    fullPath: "",
     children: await getChildren(""),
-    hasChildren: true,
-    isExpanded: true
-  };
-  return treeData;
+    _fetched: true,
+    hasChildren: true
+  }
+}
+
+function getBreadcrumbArr(path) {
+  return path.replace(/\/+$/, '').split('/').filter(Boolean);
+}
+
+// Find node by fullPath
+function findNodeByFullPath(node, fullPath) {
+  if (node.fullPath === fullPath) return node;
+  if (!node.children) return null;
+  for (const child of node.children) {
+    const found = findNodeByFullPath(child, fullPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+async function expandNodeByPath(tree, pathArr) {
+  if (pathArr.length === 0) return;
+  let node = tree;
+  for (let folder of pathArr) {
+    if (!node.children) return;
+    let child = node.children.find(c => c.folderName === folder);
+    if (!child) return;
+    if (child.hasChildren && !child._fetched) {
+      child.children = await getChildren(child.fullPath);
+      child._fetched = true;
+    }
+    node = child;
+  }
 }
 
 async function renderBreadcrumb(path) {
   const nav = document.getElementById("breadcrumb");
   const backBtn = document.getElementById("back-btn");
   nav.innerHTML = "";
-  
-  const ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
-  
+  const ids = getBreadcrumbArr(path);
+
   if (ids.length > 0) {
     backBtn.classList.remove("hidden");
     backBtn.onclick = () => {
@@ -136,40 +151,8 @@ async function renderBreadcrumb(path) {
   }
 }
 
-function showModal(node) {
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-  modal.innerHTML = `
-    <div class="glass p-6 max-w-lg w-full mx-4">
-      <h2 class="text-xl font-bold mb-4">${node.name}</h2>
-      <p class="mb-4">Betrag: ${node.value ? node.value.toLocaleString('de-DE') : "N/A"} €</p>
-      <p class="mb-4 text-sm text-gray-600">Folder: ${node.folderName || 'N/A'}</p>
-      <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Schließen</button>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  modal.querySelector('button').onclick = () => modal.remove();
-  modal.onclick = (e) => {
-    if (e.target === modal) modal.remove();
-  };
-}
-
-async function renderDendro(path = "") {
-  debug("Rendering dendrogram for path:", path);
-  await renderBreadcrumb(path);
-
-  if (!treeData) {
-    treeData = await buildInitialTree();
-  }
-
-  const chartDom = document.getElementById("main-dendro");
-  if (myChart) {
-    myChart.dispose();
-  }
-  myChart = echarts.init(chartDom);
-
-  const option = {
+function getEChartsOption() {
+  return {
     tooltip: {
       show: true,
       trigger: 'item',
@@ -189,8 +172,7 @@ async function renderDendro(path = "") {
       symbol: 'circle',
       symbolSize: 14,
       orient: 'LR',
-      expandAndCollapse: true,
-      initialTreeDepth: 1,
+      expandAndCollapse: false,
       lineStyle: {
         width: 2,
         color: '#ccc'
@@ -208,57 +190,71 @@ async function renderDendro(path = "") {
           align: 'left'
         }
       },
-      emphasis: {
-        focus: 'descendant'
-      },
+      emphasis: { focus: 'descendant' },
       animation: true,
-      animationDuration: 500,
+      animationDuration: 400,
       animationEasingUpdate: 'quinticInOut'
     }]
   };
-
-  myChart.setOption(option);
-
-  myChart.on('click', async function (params) {
-    const node = params.data;
-    debug("Clicked node:", node);
-
-    // If it's a leaf node (no children possible), show modal
-    if (node.isLeaf) {
-      debug("Showing modal for leaf node:", node);
-      showModal(node);
-      return;
-    }
-
-    // If it's an expandable node
-    if (node.hasChildren) {
-      if (!node.children || node.children.length === 0) {
-        // Load children if not loaded
-        debug("Loading children for node:", node);
-        node.children = await getChildren(node.fullPath + '/');
-        node.isExpanded = true;
-      } else {
-        // Toggle expansion
-        node.isExpanded = !node.isExpanded;
-        if (!node.isExpanded) {
-          node.children = [];
-        } else {
-          node.children = await getChildren(node.fullPath + '/');
-        }
-      }
-      
-      myChart.setOption(option);
-    }
-  });
-
-  window.addEventListener('resize', () => {
-    if (myChart) {
-      myChart.resize();
-    }
-  });
 }
 
-// Initialize on page load
+async function renderDendro(path = "") {
+  currentPath = path;
+  await renderBreadcrumb(path);
+  if (!treeData) await buildRootTree();
+
+  // Expand all ancestors up to the current path
+  const pathArr = getBreadcrumbArr(path);
+  await expandNodeByPath(treeData, pathArr);
+
+  const chartDom = document.getElementById("main-dendro");
+  if (!myChart) myChart = echarts.init(chartDom);
+  myChart.setOption(getEChartsOption());
+
+  // Only set one click handler
+  if (!myChart._hasClickHandler) {
+    myChart.on('click', async function (params) {
+      const clickedFullPath = params.data.fullPath;
+      const node = findNodeByFullPath(treeData, clickedFullPath);
+      if (!node) return;
+
+      // LEAF: Show a modal
+      if (!node.hasChildren || typeof node.children === "undefined") {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+          <div class="glass p-6 max-w-lg w-full mx-4">
+            <h2 class="text-xl font-bold mb-4">${node.name}</h2>
+            <p class="mb-4">Betrag: ${node.value ? node.value.toLocaleString('de-DE') : "N/A"} €</p>
+            <p class="mb-4 text-sm text-gray-600">Folder: ${node.folderName || 'N/A'}</p>
+            <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Schließen</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('button').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        return;
+      }
+
+      // NON-LEAF: Expand/collapse in-place (toggle)
+      if (!node._fetched) {
+        // Expand
+        node.children = await getChildren(node.fullPath);
+        node._fetched = true;
+      } else {
+        // Collapse
+        node.children = null;
+        node._fetched = false;
+      }
+      myChart.setOption(getEChartsOption());
+    });
+    myChart._hasClickHandler = true;
+  }
+
+  window.onresize = () => myChart.resize();
+}
+
+// --------- INIT ---------
 window.onload = function () {
   renderDendro("");
 };
