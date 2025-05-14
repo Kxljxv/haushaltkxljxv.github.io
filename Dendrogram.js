@@ -59,9 +59,9 @@ async function getChildren(path = "") {
       children.push({
         name: pickLabel(yaml),
         value: betrag,
-        folderName: folderName, // Always store folderName regardless of children
-        fullPath: path + folderName, // Store full path
-        hasChildren: hasChildren, // Store whether it has children
+        folderName: folderName,
+        fullPath: path + folderName,
+        hasChildren: hasChildren,
         children: hasChildren ? [] : undefined
       });
     }
@@ -87,7 +87,6 @@ async function renderBreadcrumb(path) {
   
   const ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
   
-  // Handle back button
   if (ids.length > 0) {
     backBtn.classList.remove("hidden");
     backBtn.onclick = () => {
@@ -98,7 +97,6 @@ async function renderBreadcrumb(path) {
     backBtn.classList.add("hidden");
   }
 
-  // Root button
   const rootBtn = document.createElement("button");
   rootBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
   rootBtn.innerText = "Root";
@@ -107,7 +105,6 @@ async function renderBreadcrumb(path) {
 
   if (ids.length === 0) return;
 
-  // Build breadcrumb trail
   let currPath = "";
   for (let i = 0; i < ids.length; ++i) {
     const sep = document.createElement("span");
@@ -125,6 +122,8 @@ async function renderBreadcrumb(path) {
   }
 }
 
+let myChart = null;
+
 async function renderDendro(path = "") {
   debug("Rendering dendrogram for path:", path);
   await renderBreadcrumb(path);
@@ -136,7 +135,13 @@ async function renderDendro(path = "") {
   };
 
   const chartDom = document.getElementById("main-dendro");
-  const myChart = echarts.init(chartDom);
+  
+  // Dispose of previous chart instance if it exists
+  if (myChart) {
+    myChart.dispose();
+  }
+  
+  myChart = echarts.init(chartDom);
 
   const option = {
     tooltip: {
@@ -159,7 +164,7 @@ async function renderDendro(path = "") {
       symbolSize: 14,
       orient: 'LR',
       expandAndCollapse: true,
-      initialTreeDepth: 1,
+      initialTreeDepth: -1, // Show all levels initially
       lineStyle: {
         width: 2,
         color: '#ccc'
@@ -179,7 +184,10 @@ async function renderDendro(path = "") {
       },
       emphasis: {
         focus: 'descendant'
-      }
+      },
+      animation: true,
+      animationDuration: 500,
+      animationEasingUpdate: 'quinticInOut'
     }]
   };
 
@@ -189,11 +197,9 @@ async function renderDendro(path = "") {
     const node = params.data;
     debug("Clicked node:", node);
 
-    // If node has no children (is a leaf) or no folderName
     if (!node.hasChildren || !node.folderName) {
       debug("Leaf node clicked:", node);
       
-      // Create and show modal
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
       modal.innerHTML = `
@@ -213,24 +219,19 @@ async function renderDendro(path = "") {
       return;
     }
 
-    // For expandable nodes
-    const nodePath = node.fullPath ? node.fullPath + '/' : node.folderName + '/';
-    debug("Loading children for path:", nodePath);
-
-    // Load new children if not already loaded
-    if (!node.children || node.children.length === 0) {
-      node.children = await getChildren(nodePath);
-    }
-
-    // Update chart
-    myChart.setOption({
-      series: [{ data: [rootNode] }]
-    });
+    // Handle expandable nodes
+    const newPath = node.fullPath ? node.fullPath + '/' : node.folderName + '/';
+    debug("Loading children for path:", newPath);
+    
+    // Load the new view
+    renderDendro(newPath);
   });
 
   // Handle window resize
   const resizeHandler = () => {
-    myChart.resize();
+    if (myChart) {
+      myChart.resize();
+    }
   };
   window.removeEventListener('resize', resizeHandler);
   window.addEventListener('resize', resizeHandler);
