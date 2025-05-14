@@ -312,8 +312,73 @@ class DendrogramManager {
     }
 }
 
-// Utility functions remain the same
-[Previous utility functions for fetchJSON, fetchYAML, pickLabel, hasSubdirectory, and getChildren]
+async function fetchJSON(path) {
+    try {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`Failed to fetch ${path}`);
+        return await response.json();
+    } catch (error) {
+        DEBUG.log(`Error fetching JSON: ${path}`, error);
+        return null;
+    }
+}
+
+async function fetchYAML(path) {
+    try {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`Failed to fetch ${path}`);
+        const text = await response.text();
+        return jsyaml.load(text);
+    } catch (error) {
+        DEBUG.log(`Error fetching YAML: ${path}`, error);
+        return null;
+    }
+}
+
+function pickLabel(yamlObj) {
+    for (const key of LABEL_PRIORITY) {
+        if (yamlObj[key]) return yamlObj[key];
+    }
+    return "Unbenannt";
+}
+
+async function hasSubdirectory(path, folderName) {
+    const testPath = `${path}${folderName}/directory.json`;
+    DEBUG.log(`Checking for subdirectory: ${testPath}`);
+    const subDir = await fetchJSON(testPath);
+    const result = !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
+    DEBUG.log(`Subdirectory check result: ${result}`);
+    return result;
+}
+
+async function getChildren(path = "") {
+    DEBUG.log(`Getting children for path: ${path}`);
+    const dirData = await fetchJSON(`${path}directory.json`);
+    if (!dirData) return [];
+    
+    const children = [];
+    for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
+        const yaml = await fetchYAML(`${path}${file}`);
+        if (yaml && yaml.Betrag) {
+            const betrag = parseFloat(yaml.Betrag);
+            if (isNaN(betrag)) continue;
+            
+            const folderName = file.replace('.yaml', '');
+            const hasChildren = await hasSubdirectory(path, folderName);
+            
+            children.push({
+                name: pickLabel(yaml),
+                value: betrag,
+                folderName: folderName,
+                fullPath: path + folderName + '/',
+                hasChildren: hasChildren
+            });
+        }
+    }
+    children.sort((a, b) => b.value - a.value);
+    DEBUG.log(`Found ${children.length} children for path: ${path}`);
+    return children;
+}
 
 // Initialize
 window.onload = async function() {
