@@ -7,7 +7,6 @@ const LABEL_PRIORITY = [
   "Bereichsbezeichnung"
 ];
 
-// Add debugging function
 function debug(message, data) {
   console.log(`[Debug] ${message}`, data);
 }
@@ -46,20 +45,23 @@ async function getChildren(path = "") {
   debug("Getting children for path:", path);
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) return [];
+  
   const children = [];
   for (const file of dirData.files.filter(f => f.endsWith(".yaml"))) {
     const yaml = await fetchYAML(`${path}${file}`);
     if (yaml && yaml.Betrag) {
       const betrag = parseFloat(yaml.Betrag);
       if (isNaN(betrag)) continue;
+      
       const folderName = file.replace('.yaml', '');
-      let hasChildren = await hasSubdirectory(path, folderName);
+      const hasChildren = await hasSubdirectory(path, folderName);
+      
       children.push({
         name: pickLabel(yaml),
         value: betrag,
-        folderName: hasChildren ? folderName : undefined,
-        path: path + folderName, // Add path information
-        isLeaf: !hasChildren, // Add explicit leaf indicator
+        folderName: folderName, // Always store folderName regardless of children
+        fullPath: path + folderName, // Store full path
+        hasChildren: hasChildren, // Store whether it has children
         children: hasChildren ? [] : undefined
       });
     }
@@ -71,15 +73,32 @@ async function getChildren(path = "") {
 
 async function hasSubdirectory(path, folderName) {
   const testPath = `${path}${folderName}/directory.json`;
+  debug("Checking for subdirectory:", testPath);
   const subDir = await fetchJSON(testPath);
-  return !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
+  const hasChildren = !!(subDir && subDir.files && subDir.files.some(f => f.endsWith(".yaml")));
+  debug(`Folder ${folderName} has children:`, hasChildren);
+  return hasChildren;
 }
 
 async function renderBreadcrumb(path) {
   const nav = document.getElementById("breadcrumb");
+  const backBtn = document.getElementById("back-btn");
   nav.innerHTML = "";
+  
   const ids = path.replace(/\/+$/, '').split('/').filter(Boolean);
-  let currPath = "";
+  
+  // Handle back button
+  if (ids.length > 0) {
+    backBtn.classList.remove("hidden");
+    backBtn.onclick = () => {
+      const newPath = ids.slice(0, -1).join("/");
+      renderDendro(newPath ? newPath + "/" : "");
+    };
+  } else {
+    backBtn.classList.add("hidden");
+  }
+
+  // Root button
   const rootBtn = document.createElement("button");
   rootBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
   rootBtn.innerText = "Root";
@@ -88,17 +107,20 @@ async function renderBreadcrumb(path) {
 
   if (ids.length === 0) return;
 
+  // Build breadcrumb trail
+  let currPath = "";
   for (let i = 0; i < ids.length; ++i) {
     const sep = document.createElement("span");
     sep.innerText = "›";
     sep.className = "mx-1 text-gray-400";
     nav.appendChild(sep);
 
-    currPath = ids.slice(0, i + 1).join("/") + "/";
+    currPath += ids[i] + "/";
     const crumbBtn = document.createElement("button");
     crumbBtn.className = "mx-0 px-2 py-0.5 glass hover:bg-blue-200 hover:text-blue-900 transition";
     crumbBtn.innerText = ids[i];
-    crumbBtn.onclick = () => renderDendro(currPath);
+    const pathForClick = currPath;
+    crumbBtn.onclick = () => renderDendro(pathForClick);
     nav.appendChild(crumbBtn);
   }
 }
@@ -109,7 +131,8 @@ async function renderDendro(path = "") {
 
   const rootNode = {
     name: path === "" ? "Root" : path.replace(/\/+$/, '').split('/').pop(),
-    children: await getChildren(path)
+    children: await getChildren(path),
+    fullPath: path
   };
 
   const chartDom = document.getElementById("main-dendro");
@@ -120,41 +143,44 @@ async function renderDendro(path = "") {
       show: true,
       trigger: 'item',
       formatter: function (params) {
-        return `${params.data.name}<br/>Betrag: ${params.data.value !== undefined ? params.data.value.toLocaleString('de-DE') : ""}`;
-      }
+        const data = params.data;
+        return `${data.name}<br/>Betrag: ${data.value ? data.value.toLocaleString('de-DE') + ' €' : 'N/A'}`;
+      },
+      className: 'echarts-tooltip-custom'
     },
-    series: [
-      {
-        type: 'tree',
-        data: [rootNode],
-        top: '2%',
-        left: '2%',
-        bottom: '2%',
-        right: '20%',
-        symbol: 'circle',
-        symbolSize: 14,
-        orient: 'LR',
-        expandAndCollapse: true,
-        initialTreeDepth: 1,
-        lineStyle: {
-          width: 2,
-          color: '#ccc'
-        },
+    series: [{
+      type: 'tree',
+      data: [rootNode],
+      top: '2%',
+      left: '2%',
+      bottom: '2%',
+      right: '20%',
+      symbol: 'circle',
+      symbolSize: 14,
+      orient: 'LR',
+      expandAndCollapse: true,
+      initialTreeDepth: 1,
+      lineStyle: {
+        width: 2,
+        color: '#ccc'
+      },
+      label: {
+        position: 'left',
+        verticalAlign: 'middle',
+        align: 'right',
+        fontSize: 12
+      },
+      leaves: {
         label: {
-          position: 'left',
+          position: 'right',
           verticalAlign: 'middle',
-          align: 'right',
-          fontSize: 12
-        },
-        leaves: {
-          label: {
-            position: 'right',
-            verticalAlign: 'middle',
-            align: 'left'
-          }
+          align: 'left'
         }
+      },
+      emphasis: {
+        focus: 'descendant'
       }
-    ]
+    }]
   };
 
   myChart.setOption(option);
@@ -163,21 +189,18 @@ async function renderDendro(path = "") {
     const node = params.data;
     debug("Clicked node:", node);
 
-    // Check if the node is a leaf
-    if (node.isLeaf || !node.folderName) {
-      debug("Leaf node clicked:", {
-        name: node.name,
-        value: node.value,
-        path: node.path
-      });
+    // If node has no children (is a leaf) or no folderName
+    if (!node.hasChildren || !node.folderName) {
+      debug("Leaf node clicked:", node);
       
-      // Create a custom modal for leaf nodes
+      // Create and show modal
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
       modal.innerHTML = `
         <div class="glass p-6 max-w-lg w-full mx-4">
           <h2 class="text-xl font-bold mb-4">${node.name}</h2>
           <p class="mb-4">Betrag: ${node.value ? node.value.toLocaleString('de-DE') : "N/A"} €</p>
+          <p class="mb-4 text-sm text-gray-600">Folder: ${node.folderName || 'N/A'}</p>
           <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Schließen</button>
         </div>
       `;
@@ -190,20 +213,11 @@ async function renderDendro(path = "") {
       return;
     }
 
-    // Handle expandable nodes
-    let nodePath = '';
-    if (params.treeAncestors && params.treeAncestors.length > 0) {
-      const pathParts = params.treeAncestors
-        .slice(1) // Skip root
-        .map(ancestor => ancestor.data.folderName)
-        .filter(Boolean);
-      nodePath = pathParts.join('/') + '/';
-    }
-
-    nodePath = path + nodePath + node.folderName + '/';
+    // For expandable nodes
+    const nodePath = node.fullPath ? node.fullPath + '/' : node.folderName + '/';
     debug("Loading children for path:", nodePath);
 
-    // Load new children
+    // Load new children if not already loaded
     if (!node.children || node.children.length === 0) {
       node.children = await getChildren(nodePath);
     }
@@ -214,9 +228,15 @@ async function renderDendro(path = "") {
     });
   });
 
-  window.addEventListener('resize', () => myChart.resize());
+  // Handle window resize
+  const resizeHandler = () => {
+    myChart.resize();
+  };
+  window.removeEventListener('resize', resizeHandler);
+  window.addEventListener('resize', resizeHandler);
 }
 
+// Initialize on page load
 window.onload = function () {
   renderDendro("");
 };
