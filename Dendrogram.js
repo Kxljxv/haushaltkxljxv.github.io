@@ -28,13 +28,17 @@ const LABEL_PRIORITY = [
     "Bereichsbezeichnung"
 ];
 
+// Constants for node sizing
+const MIN_NODE_SIZE = 8;
+const MAX_NODE_SIZE = 30;
+
 class TreeNode {
     constructor(data) {
         Object.assign(this, data);
         this.id = Math.random().toString(36).substr(2, 9);
         this._expanded = false;
         this._children = null;
-        this.level = data.level || 0; // Add level tracking
+        this.level = data.level || 0;
     }
 
     async expand() {
@@ -42,14 +46,34 @@ class TreeNode {
         if (!this.hasChildren) return;
         if (!this._children) {
             this._children = await this.loadChildren();
+            this.calculateRelativeSizes(this._children);
         }
         this._expanded = true;
+    }
+
+    calculateRelativeSizes(nodes) {
+        if (!nodes || nodes.length === 0) return;
+        
+        // Find max and min values in this level
+        const values = nodes.map(n => Math.abs(n.value || 0));
+        const maxVal = Math.max(...values);
+        const minVal = Math.min(...values);
+        
+        // Calculate relative sizes
+        nodes.forEach(node => {
+            const value = Math.abs(node.value || 0);
+            if (maxVal === minVal) {
+                node.symbolSize = (MIN_NODE_SIZE + MAX_NODE_SIZE) / 2;
+            } else {
+                const scale = (value - minVal) / (maxVal - minVal);
+                node.symbolSize = MIN_NODE_SIZE + scale * (MAX_NODE_SIZE - MIN_NODE_SIZE);
+            }
+        });
     }
 
     collapse() {
         DEBUG.log(`Collapsing node: ${this.name} (${this.folderName}) at level ${this.level}`);
         this._expanded = false;
-        // Don't clear _children to preserve the data
     }
 
     async loadChildren() {
@@ -57,7 +81,6 @@ class TreeNode {
         const path = this.fullPath;
         DEBUG.log(`Loading children for path: ${path} at level ${this.level}`);
         const children = await getChildren(path);
-        // Pass the level to children
         return children.map(child => new TreeNode({
             ...child,
             level: this.level + 1
@@ -69,7 +92,7 @@ class TreeNode {
     }
 
     toEChartsNode() {
-        return {
+        const node = {
             name: this.name,
             value: this.value,
             id: this.id,
@@ -84,6 +107,13 @@ class TreeNode {
                     '#91cc75'
             }
         };
+
+        // Set symbol size for leaves or if explicitly calculated
+        if (!this.hasChildren || this.symbolSize) {
+            node.symbolSize = this.symbolSize || MIN_NODE_SIZE;
+        }
+
+        return node;
     }
 }
 
@@ -101,7 +131,8 @@ class DendrogramManager {
             fullPath: "",
             hasChildren: true,
             folderName: "",
-            level: 0
+            level: 0,
+            symbolSize: MIN_NODE_SIZE
         });
         await this.root.expand();
         this.setupChart();
@@ -120,7 +151,8 @@ class DendrogramManager {
             DEBUG.log('Chart click event', {
                 id: params.data.id,
                 name: params.data.name,
-                level: params.data.level
+                level: params.data.level,
+                value: params.data.value
             });
             await this.handleNodeClick(params.data.id);
         });
@@ -138,7 +170,8 @@ class DendrogramManager {
         DEBUG.log(`Handling click for node: ${node.name}`, {
             hasChildren: node.hasChildren,
             expanded: node._expanded,
-            level: node.level
+            level: node.level,
+            value: node.value
         });
 
         if (!node.hasChildren) {
@@ -203,7 +236,7 @@ class DendrogramManager {
                 left: '2%',
                 bottom: '2%',
                 right: '20%',
-                symbolSize: 14,
+                symbolSize: MIN_NODE_SIZE, // Default size for non-leaf nodes
                 orient: 'LR',
                 label: {
                     position: 'left',
@@ -231,7 +264,7 @@ class DendrogramManager {
     }
 }
 
-// Utility functions remain the same
+// Utility functions remain the same as before
 async function fetchJSON(path) {
     try {
         const response = await fetch(path);
