@@ -1,53 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ECharts Dendrogram</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="Dendrogram.css" />
+    <meta charset="UTF-8" />
+    <title>ECharts Dendrogram</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="Dendrogram.css" />
 </head>
 <body class="w-screen h-screen overflow-hidden select-none bg-gradient-to-br from-blue-100 to-blue-300">
-  <div class="flex flex-col items-center justify-start w-full h-full pt-1 relative">
-    <!-- Controls bar -->
-    <div class="flex items-center gap-4 mb-1 z-10 w-full px-2">
-      <!-- Navigation -->
-      <div class="flex items-center gap-2">
-        <button id="back-btn" class="glass px-2 py-1 text-blue-800 font-medium transition hover:bg-blue-200 hover:text-blue-900 text-xs hidden">
-          ⬅ Back
-        </button>
-        <nav id="breadcrumb" class="glass px-2 py-1 text-blue-900 font-medium flex items-center gap-1 text-xs"></nav>
-      </div>
-
-      <!-- Zoom Controls -->
-      <div class="flex items-center gap-2 glass px-2 py-1">
-        <button id="zoom-in" class="text-blue-800 hover:text-blue-900 text-lg font-bold">+</button>
-        <button id="zoom-reset" class="text-blue-800 hover:text-blue-900 text-xs">Reset</button>
-        <button id="zoom-out" class="text-blue-800 hover:text-blue-900 text-lg font-bold">-</button>
-      </div>
-
-      <!-- Size Mode Switch -->
-      <label class="relative inline-flex items-center cursor-pointer glass px-2 py-1">
-        <input type="checkbox" id="size-mode" class="sr-only peer">
-        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-        <span class="ml-2 text-xs text-gray-700">Global Sizing</span>
-      </label>
-
-      <!-- Debug Toggle -->
-      <button id="debug-toggle" class="glass px-2 py-1 text-xs">Toggle Debug</button>
+    <div class="flex flex-col items-center justify-start w-full h-full pt-1 relative">
+        <!-- Controls bar -->
+        <div class="flex items-center gap-2 mb-1 z-10 w-full px-2">
+            <button id="back-btn" class="glass px-2 py-1 text-blue-800 font-medium transition hover:bg-blue-200 hover:text-blue-900 text-xs hidden">
+                ⬅ Back
+            </button>
+            <nav id="breadcrumb" class="glass px-2 py-1 text-blue-900 font-medium flex items-center gap-1 text-xs"></nav>
+            
+            <!-- Add zoom controls -->
+            <div class="glass px-2 py-1 flex items-center gap-2">
+                <button id="zoom-in" class="text-blue-800 hover:text-blue-900 font-bold text-lg">+</button>
+                <button id="zoom-reset" class="text-blue-800 hover:text-blue-900 text-xs">Reset</button>
+                <button id="zoom-out" class="text-blue-800 hover:text-blue-900 font-bold text-lg">-</button>
+            </div>
+            
+            <!-- Add sizing switch -->
+            <div class="glass px-2 py-1 flex items-center gap-2">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="size-switch" class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span class="ml-2 text-xs text-gray-700">Global Sizing</span>
+                </label>
+            </div>
+            
+            <button id="debug-toggle" class="glass px-2 py-1 text-xs">Toggle Debug</button>
+        </div>
+        <div id="main-dendro" class="w-full h-[94vh]"></div>
     </div>
-
-    <!-- Main Dendrogram -->
-    <div id="main-dendro" class="w-full h-[94vh]"></div>
-  </div>
-
-  <!-- Debug Panel -->
-  <div id="debug-panel"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
-  <script src="Dendrogram.js"></script>
+    <div id="debug-panel"></div>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    <script src="Dendrogram.js"></script>
 </body>
 </html>
