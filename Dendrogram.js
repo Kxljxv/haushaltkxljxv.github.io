@@ -38,7 +38,7 @@ class TreeNode {
         this._expanded = false;
         this._children = null;
         this.level = data.level || 0;
-        this.globalValue = data.value || 0; // Store the original value for global sizing
+        this.globalValue = data.value || 0;
     }
 
     async expand() {
@@ -50,22 +50,38 @@ class TreeNode {
         this._expanded = true;
     }
 
-    calculateRelativeSizes(nodes, useGlobalSizing) {
-        if (!nodes || nodes.length === 0) return;
-        
-        let values;
-        if (useGlobalSizing) {
-            // Use global maximum and minimum values
-            values = this.findGlobalMinMax(this);
-        } else {
-            // Use local values within this directory
-            values = nodes.map(n => Math.abs(n.value || 0));
+    calculateNodeSizes(sizeMode) {
+        if (!this._children || this._children.length === 0) return;
+
+        switch (sizeMode) {
+            case 'global':
+                this.calculateGlobalSizes();
+                break;
+            case 'layer':
+                this.calculateLayerSizes();
+                break;
+            case 'local':
+            default:
+                this.calculateLocalSizes();
+                break;
         }
+
+        // Recursively calculate sizes for children
+        this._children.forEach(child => {
+            if (child._expanded) {
+                child.calculateNodeSizes(sizeMode);
+            }
+        });
+    }
+
+    calculateLocalSizes() {
+        if (!this._children) return;
         
+        const values = this._children.map(n => Math.abs(n.value || 0));
         const maxVal = Math.max(...values);
         const minVal = Math.min(...values);
         
-        nodes.forEach(node => {
+        this._children.forEach(node => {
             const value = Math.abs(node.value || 0);
             if (maxVal === minVal) {
                 node.symbolSize = (MIN_NODE_SIZE + MAX_NODE_SIZE) / 2;
@@ -76,12 +92,81 @@ class TreeNode {
         });
     }
 
-    findGlobalMinMax(node, values = []) {
-        values.push(Math.abs(node.value || 0));
-        if (node._children) {
-            node._children.forEach(child => this.findGlobalMinMax(child, values));
+    calculateGlobalSizes() {
+        const allValues = [];
+        this.collectAllValues(allValues);
+        
+        const maxVal = Math.max(...allValues);
+        const minVal = Math.min(...allValues);
+        
+        this._children.forEach(node => {
+            const value = Math.abs(node.value || 0);
+            if (maxVal === minVal) {
+                node.symbolSize = (MIN_NODE_SIZE + MAX_NODE_SIZE) / 2;
+            } else {
+                const scale = (value - minVal) / (maxVal - minVal);
+                node.symbolSize = MIN_NODE_SIZE + scale * (MAX_NODE_SIZE - MIN_NODE_SIZE);
+            }
+        });
+    }
+
+    calculateLayerSizes() {
+        // Collect all values at this level across the tree
+        const layerValues = new Map(); // Map<level, number[]>
+        this.collectLayerValues(layerValues);
+
+        // Calculate sizes for each layer
+        for (const [level, values] of layerValues.entries()) {
+            const maxVal = Math.max(...values);
+            const minVal = Math.min(...values);
+
+            // Find all nodes at this level and set their sizes
+            this.setLayerNodeSizes(level, minVal, maxVal);
         }
-        return values;
+    }
+
+    collectLayerValues(layerValues) {
+        if (!this._children) return;
+
+        this._children.forEach(node => {
+            if (!layerValues.has(node.level)) {
+                layerValues.set(node.level, []);
+            }
+            layerValues.get(node.level).push(Math.abs(node.value || 0));
+
+            if (node._expanded) {
+                node.collectLayerValues(layerValues);
+            }
+        });
+    }
+
+    setLayerNodeSizes(targetLevel, minVal, maxVal) {
+        if (!this._children) return;
+
+        this._children.forEach(node => {
+            if (node.level === targetLevel) {
+                const value = Math.abs(node.value || 0);
+                if (maxVal === minVal) {
+                    node.symbolSize = (MIN_NODE_SIZE + MAX_NODE_SIZE) / 2;
+                } else {
+                    const scale = (value - minVal) / (maxVal - minVal);
+                    node.symbolSize = MIN_NODE_SIZE + scale * (MAX_NODE_SIZE - MIN_NODE_SIZE);
+                }
+            }
+
+            if (node._expanded) {
+                node.setLayerNodeSizes(targetLevel, minVal, maxVal);
+            }
+        });
+    }
+
+    collectAllValues(values) {
+        if (this.value) {
+            values.push(Math.abs(this.value));
+        }
+        if (this._children) {
+            this._children.forEach(child => child.collectAllValues(values));
+        }
     }
 
     collapse() {
@@ -134,7 +219,7 @@ class DendrogramManager {
         this.root = null;
         this.chart = null;
         this.currentPath = "";
-        this.useGlobalSizing = false;
+        this.sizeMode = 'local'; // default to local sizing
         this.zoomLevel = 1;
     }
 
@@ -152,6 +237,7 @@ class DendrogramManager {
         this.setupControls();
         await this.root.expand();
         this.setupChart();
+        this.updateNodeSizes();
         this.render();
     }
 
@@ -161,9 +247,9 @@ class DendrogramManager {
         document.getElementById('zoom-out').onclick = () => this.zoom(0.8);
         document.getElementById('zoom-reset').onclick = () => this.resetZoom();
 
-        // Sizing switch
-        document.getElementById('size-switch').onchange = (e) => {
-            this.useGlobalSizing = e.target.checked;
+        // Size mode selector
+        document.getElementById('size-mode').onchange = (e) => {
+            this.sizeMode = e.target.value;
             this.updateNodeSizes();
             this.render();
         };
@@ -188,13 +274,9 @@ class DendrogramManager {
     }
 
     updateNodeSizes() {
-        const updateNode = (node) => {
-            if (node._children) {
-                node.calculateRelativeSizes(node._children, this.useGlobalSizing);
-                node._children.forEach(updateNode);
-            }
-        };
-        updateNode(this.root);
+        if (this.root) {
+            this.root.calculateNodeSizes(this.sizeMode);
+        }
     }
 
     setupChart() {
@@ -233,9 +315,9 @@ class DendrogramManager {
             node.collapse();
         } else {
             await node.expand();
-            node.calculateRelativeSizes(node._children, this.useGlobalSizing);
         }
 
+        this.updateNodeSizes();
         this.render();
     }
 
@@ -311,7 +393,6 @@ class DendrogramManager {
         this.chart.setOption(option);
     }
 }
-
 async function fetchJSON(path) {
     try {
         const response = await fetch(path);
