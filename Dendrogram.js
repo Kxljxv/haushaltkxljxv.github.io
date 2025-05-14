@@ -7,6 +7,11 @@ const LABEL_PRIORITY = [
   "Bereichsbezeichnung"
 ];
 
+// Add debugging function
+function debug(message, data) {
+  console.log(`[Debug] ${message}`, data);
+}
+
 function pickLabel(yamlObj) {
   for (const key of LABEL_PRIORITY) {
     if (yamlObj[key]) return yamlObj[key];
@@ -19,7 +24,8 @@ async function fetchJSON(path) {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     return await response.json();
-  } catch {
+  } catch (error) {
+    debug(`Error fetching JSON from ${path}:`, error);
     return null;
   }
 }
@@ -30,12 +36,14 @@ async function fetchYAML(path) {
     if (!response.ok) throw new Error(`Failed to fetch ${path}`);
     const text = await response.text();
     return jsyaml.load(text);
-  } catch {
+  } catch (error) {
+    debug(`Error fetching YAML from ${path}:`, error);
     return null;
   }
 }
 
 async function getChildren(path = "") {
+  debug("Getting children for path:", path);
   const dirData = await fetchJSON(`${path}directory.json`);
   if (!dirData) return [];
   const children = [];
@@ -49,12 +57,15 @@ async function getChildren(path = "") {
       children.push({
         name: pickLabel(yaml),
         value: betrag,
-        folderName: hasChildren ? folderName : undefined, // only expandable nodes get folderName
-        children: hasChildren ? [] : undefined // empty array for expandable nodes, undefined for leaves
+        folderName: hasChildren ? folderName : undefined,
+        path: path + folderName, // Add path information
+        isLeaf: !hasChildren, // Add explicit leaf indicator
+        children: hasChildren ? [] : undefined
       });
     }
   }
-  children.sort((a, b) => b.value - a.value); // Sort descending by value
+  children.sort((a, b) => b.value - a.value);
+  debug("Found children:", children);
   return children;
 }
 
@@ -93,6 +104,7 @@ async function renderBreadcrumb(path) {
 }
 
 async function renderDendro(path = "") {
+  debug("Rendering dendrogram for path:", path);
   await renderBreadcrumb(path);
 
   const rootNode = {
@@ -149,45 +161,54 @@ async function renderDendro(path = "") {
 
   myChart.on('click', async function (params) {
     const node = params.data;
+    debug("Clicked node:", node);
 
-    // If node is a leaf (no folderName), do something!
-    if (!node.folderName) {
-      // EXAMPLE: Show leaf info in an alert or console
-      alert(
-        `Leaf clicked!\n\nTitel: ${node.name}\nBetrag: ${node.value ? node.value.toLocaleString('de-DE') : ""}`
-      );
-      // Or just log:
-      // console.log('Leaf clicked:', node);
+    // Check if the node is a leaf
+    if (node.isLeaf || !node.folderName) {
+      debug("Leaf node clicked:", {
+        name: node.name,
+        value: node.value,
+        path: node.path
+      });
+      
+      // Create a custom modal for leaf nodes
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML = `
+        <div class="glass p-6 max-w-lg w-full mx-4">
+          <h2 class="text-xl font-bold mb-4">${node.name}</h2>
+          <p class="mb-4">Betrag: ${node.value ? node.value.toLocaleString('de-DE') : "N/A"} €</p>
+          <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Schließen</button>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      modal.querySelector('button').onclick = () => modal.remove();
+      modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+      };
       return;
     }
 
-    // Only one node per layer open: collapse all siblings, expand this one
-    // Find path to this node
-    let ancestors = params.treeAncestors || [];
-    let currPathArr = [];
-    if (ancestors.length > 1) {
-      for (let i = 1; i < ancestors.length; ++i) {
-        currPathArr.push(ancestors[i].data.folderName);
-      }
+    // Handle expandable nodes
+    let nodePath = '';
+    if (params.treeAncestors && params.treeAncestors.length > 0) {
+      const pathParts = params.treeAncestors
+        .slice(1) // Skip root
+        .map(ancestor => ancestor.data.folderName)
+        .filter(Boolean);
+      nodePath = pathParts.join('/') + '/';
     }
-    let nodePath = path;
-    if (currPathArr.length > 0) nodePath += currPathArr.join("/") + "/";
 
-    // Load new children for this node if not present or empty
+    nodePath = path + nodePath + node.folderName + '/';
+    debug("Loading children for path:", nodePath);
+
+    // Load new children
     if (!node.children || node.children.length === 0) {
-      node.children = await getChildren(nodePath + node.folderName + "/");
+      node.children = await getChildren(nodePath);
     }
 
-    // Collapse all siblings on this layer except this node
-    let parent = ancestors.length > 0 ? ancestors[ancestors.length - 1].data : null;
-    if (parent && parent.children) {
-      parent.children.forEach(child => {
-        if (child !== node) {
-          child.children = []; // collapse
-        }
-      });
-    }
-
+    // Update chart
     myChart.setOption({
       series: [{ data: [rootNode] }]
     });
