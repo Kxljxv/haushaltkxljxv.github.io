@@ -29,8 +29,8 @@ const LABEL_PRIORITY = [
 ];
 
 // Constants for node sizing
-const MIN_NODE_SIZE = 8;
-const MAX_NODE_SIZE = 30;
+const MIN_NODE_SIZE = 0;
+const MAX_NODE_SIZE = 45;
 
 class TreeNode {
     constructor(data) {
