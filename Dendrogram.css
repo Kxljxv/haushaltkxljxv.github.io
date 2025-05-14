@@ -1,29 +1,59 @@
 .glass {
-  @apply rounded-lg bg-white/60 backdrop-blur-md shadow;
-  background: rgba(255,255,255,0.7);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10);
-  border: 1px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(8px);
+    @apply rounded-lg bg-white/60 backdrop-blur-md shadow;
+    background: rgba(255,255,255,0.7);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
 }
 
 .echarts-tooltip-custom {
-  border-radius: 0.75rem !important;
-  backdrop-filter: blur(8px) !important;
-  background: rgba(255,255,255,0.92) !important;
-  color: #222 !important;
-  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10) !important;
-  padding: 0.75rem 1.1rem !important;
-  font-size: 0.95rem !important;
-  font-family: inherit !important;
-  border: 1px solid rgba(200,200,200,0.13) !important;
+    border-radius: 0.75rem !important;
+    backdrop-filter: blur(8px) !important;
+    background: rgba(255,255,255,0.92) !important;
+    color: #222 !important;
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10) !important;
+    padding: 0.75rem 1.1rem !important;
+    font-size: 0.95rem !important;
+    font-family: inherit !important;
+    border: 1px solid rgba(200,200,200,0.13) !important;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .fixed {
-  animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.2s ease-out;
+}
+
+#debug-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    max-width: 400px;
+    max-height: 200px;
+    overflow: auto;
+    background: rgba(0,0,0,0.8);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    z-index: 1000;
+    display: none;
+}
+
+/* Zoom controls */
+.zoom-controls button {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.zoom-controls button:hover {
+    transform: scale(1.1);
 }
