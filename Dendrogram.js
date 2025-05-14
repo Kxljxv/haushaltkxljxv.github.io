@@ -1,4 +1,3 @@
-// Enhanced debugging
 const DEBUG = {
     enabled: false,
     panel: null,
@@ -35,10 +34,11 @@ class TreeNode {
         this.id = Math.random().toString(36).substr(2, 9);
         this._expanded = false;
         this._children = null;
+        this.level = data.level || 0; // Add level tracking
     }
 
     async expand() {
-        DEBUG.log(`Expanding node: ${this.name} (${this.folderName})`);
+        DEBUG.log(`Expanding node: ${this.name} (${this.folderName}) at level ${this.level}`);
         if (!this.hasChildren) return;
         if (!this._children) {
             this._children = await this.loadChildren();
@@ -47,16 +47,21 @@ class TreeNode {
     }
 
     collapse() {
-        DEBUG.log(`Collapsing node: ${this.name} (${this.folderName})`);
+        DEBUG.log(`Collapsing node: ${this.name} (${this.folderName}) at level ${this.level}`);
         this._expanded = false;
+        // Don't clear _children to preserve the data
     }
 
     async loadChildren() {
         if (!this.hasChildren) return [];
         const path = this.fullPath;
-        DEBUG.log(`Loading children for path: ${path}`);
+        DEBUG.log(`Loading children for path: ${path} at level ${this.level}`);
         const children = await getChildren(path);
-        return children.map(child => new TreeNode(child));
+        // Pass the level to children
+        return children.map(child => new TreeNode({
+            ...child,
+            level: this.level + 1
+        }));
     }
 
     get children() {
@@ -71,9 +76,12 @@ class TreeNode {
             folderName: this.folderName,
             fullPath: this.fullPath,
             hasChildren: this.hasChildren,
+            level: this.level,
             children: this.children?.map(child => child.toEChartsNode()),
             itemStyle: {
-                color: this.hasChildren ? '#73c0de' : '#91cc75'
+                color: this.hasChildren ? 
+                    (this._expanded ? '#73c0de' : '#5470c6') : 
+                    '#91cc75'
             }
         };
     }
@@ -92,7 +100,8 @@ class DendrogramManager {
             name: "Root",
             fullPath: "",
             hasChildren: true,
-            folderName: ""
+            folderName: "",
+            level: 0
         });
         await this.root.expand();
         this.setupChart();
@@ -102,10 +111,17 @@ class DendrogramManager {
     setupChart() {
         DEBUG.log('Setting up chart');
         const dom = document.getElementById('main-dendro');
+        if (this.chart) {
+            this.chart.dispose();
+        }
         this.chart = echarts.init(dom);
 
         this.chart.on('click', async (params) => {
-            DEBUG.log('Chart click event', params.data);
+            DEBUG.log('Chart click event', {
+                id: params.data.id,
+                name: params.data.name,
+                level: params.data.level
+            });
             await this.handleNodeClick(params.data.id);
         });
 
@@ -121,7 +137,8 @@ class DendrogramManager {
 
         DEBUG.log(`Handling click for node: ${node.name}`, {
             hasChildren: node.hasChildren,
-            expanded: node._expanded
+            expanded: node._expanded,
+            level: node.level
         });
 
         if (!node.hasChildren) {
@@ -149,7 +166,11 @@ class DendrogramManager {
     }
 
     showModal(node) {
-        DEBUG.log('Showing modal for node', node);
+        DEBUG.log('Showing modal for node', {
+            name: node.name,
+            value: node.value,
+            level: node.level
+        });
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
         modal.innerHTML = `
@@ -157,6 +178,7 @@ class DendrogramManager {
                 <h2 class="text-xl font-bold mb-4">${node.name}</h2>
                 <p class="mb-4">Betrag: ${node.value ? node.value.toLocaleString('de-DE') : "N/A"} €</p>
                 <p class="mb-4 text-sm text-gray-600">Folder: ${node.folderName || 'N/A'}</p>
+                <p class="mb-4 text-sm text-gray-600">Level: ${node.level}</p>
                 <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Schließen</button>
             </div>
         `;
@@ -171,7 +193,7 @@ class DendrogramManager {
             tooltip: {
                 trigger: 'item',
                 formatter: function (params) {
-                    return `${params.data.name}<br/>Betrag: ${params.data.value ? params.data.value.toLocaleString('de-DE') + ' €' : 'N/A'}`;
+                    return `${params.data.name}<br/>Level: ${params.data.level}<br/>Betrag: ${params.data.value ? params.data.value.toLocaleString('de-DE') + ' €' : 'N/A'}`;
                 }
             },
             series: [{
@@ -200,7 +222,8 @@ class DendrogramManager {
                 },
                 expandAndCollapse: true,
                 animationDuration: 400,
-                animationEasingUpdate: 'quinticInOut'
+                animationEasingUpdate: 'quinticInOut',
+                initialTreeDepth: -1
             }]
         };
 
@@ -208,7 +231,7 @@ class DendrogramManager {
     }
 }
 
-// Utility functions
+// Utility functions remain the same
 async function fetchJSON(path) {
     try {
         const response = await fetch(path);
