@@ -1,76 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ECharts Pie Chart Visualization</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- TailwindCSS with Flowbite -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: { extend: {} },
-      corePlugins: { preflight: false }
-    }
-  </script>
-  <style>
-    .glass {
-      @apply rounded-lg bg-white/60 backdrop-blur-md shadow;
-      background: rgba(255,255,255,0.7);
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10);
-      border: 1px solid rgba(255,255,255,0.2);
-      backdrop-filter: blur(8px);
-    }
-    .echarts-tooltip-custom {
-      border-radius: 0.75rem !important;
-      backdrop-filter: blur(8px) !important;
-      background: rgba(255,255,255,0.92) !important;
-      color: #222 !important;
-      box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10) !important;
-      padding: 0.75rem 1.1rem !important;
-      font-size: 0.95rem !important;
-      font-family: inherit !important;
-      border: 1px solid rgba(200,200,200,0.13) !important;
-    }
-    .spinner {
-      border: 4px solid #cbd5e1;
-      border-top: 4px solid #2563eb;
-      border-radius: 50%;
-      width: 38px;
-      height: 38px;
-      animation: spin 0.9s linear infinite;
-      margin: 0 auto;
-    }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haushalt Dendrogram</title>
+    
+    <!-- Flowbite CSS for UI components -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="Dendrogram.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Meta tags for better SEO and sharing -->
+    <meta name="description" content="Interactive Dendrogram visualization for Haushalt data">
+    <meta name="author" content="Kxljxv">
+    <meta name="theme-color" content="#3B82F6">
 </head>
 <body class="w-screen h-screen overflow-hidden select-none bg-gradient-to-br from-blue-100 to-blue-300">
-  <div class="flex flex-col items-center justify-start w-full h-full pt-1 relative">
-    <!-- Navigation area containing the back button and breadcrumb -->
-    <div class="flex items-center gap-2 mb-1 z-10 w-full px-2">
-      <!-- Back button -->
-      <button id="back-btn"
-        class="glass px-2 py-1 text-blue-800 font-medium transition hover:bg-blue-200 hover:text-blue-900 text-xs"
-        aria-label="Go back" tabindex="0" style="display:none;">
-        ⬅ Back
-      </button>
-      <!-- Breadcrumb navigation -->
-      <nav id="breadcrumb" class="glass px-2 py-1 text-blue-900 font-medium flex items-center gap-1 text-xs" aria-label="Breadcrumb"></nav>
+    <!-- Main container -->
+    <div class="flex flex-col items-center justify-start w-full h-full pt-1 relative">
+        <!-- Navigation bar -->
+        <div class="flex items-center gap-2 mb-1 z-10 w-full px-2">
+            <!-- Back button -->
+            <button id="back-btn" class="glass px-2 py-1 text-blue-800 font-medium transition hover:bg-blue-200 hover:text-blue-900 text-xs hidden">
+                ⬅ Back
+            </button>
+            
+            <!-- Breadcrumb navigation -->
+            <nav id="breadcrumb" class="glass px-2 py-1 text-blue-900 font-medium flex items-center gap-1 text-xs">
+                <!-- Breadcrumb items will be dynamically inserted here -->
+            </nav>
+        </div>
+
+        <!-- Main Dendrogram container -->
+        <div id="main-dendro" class="w-full h-[94vh]"></div>
     </div>
-    <!-- Feedback overlays -->
-    <div id="feedback-overlay" class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none" style="display:none;">
-      <div id="spinner" class="spinner mb-3" style="display:none;"></div>
-      <div id="feedback-message" class="text-blue-800 text-base font-medium bg-white/70 rounded px-4 py-2 shadow glass" style="display:none;"></div>
+
+    <!-- Loading indicator -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="glass p-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
     </div>
-    <!-- Pie chart container centered using flexbox -->
-    <div class="flex-grow w-full flex items-center justify-center">
-      <div id="main-pie" class="w-full md:w-[600px] h-[60vh] md:h-[70vh] max-w-[98vw] max-h-[75vh]" aria-label="Pie chart"></div>
-    </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
-  <script src="script.js"></script>
+
+    <!-- Scripts -->
+    <!-- ECharts for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    
+    <!-- JS-YAML for YAML parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    
+    <!-- Flowbite for UI components -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="Dendrogram.js"></script>
+
+    <!-- Error handling -->
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            // You could show a user-friendly error message here
+        });
+
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+            // You could show a user-friendly error message here
+        });
+    </script>
 </body>
 </html>
